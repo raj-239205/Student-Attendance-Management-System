@@ -20,11 +20,14 @@ import java.util.logging.Logger;
  * <ol>
  * <li>Loads database configuration from environment variables.</li>
  * <li>Tests the JDBC connection to MySQL.</li>
- * <li>Initializes the hardened database schema (tables, constraints, indexes).</li>
- * <li>Safely skips automatic sample data seeding unless explicitly requested via
- *     {@code --seed-sample-data} or {@code -Dseed.sample.data=true}.</li>
- * <li>Validates the schema (PKs, FKs, unique duplicate prevention, invalid status rejection,
- *     and 75% defaulter boundary condition).</li>
+ * <li>Initializes the hardened database schema (tables, constraints,
+ * indexes).</li>
+ * <li>Skips automatic sample data seeding. (Use --seed-sample-data or
+ * -Dseed.sample.data=true to explicitly seed sample data.)</li>
+ * <li>Validates the schema (PKs, FKs, unique duplicate prevention, invalid
+ * status
+ * rejection,
+ * and 75% defaulter boundary condition).</li>
  * <li>Opens the Swing smoke-test window with status information.</li>
  * </ol>
  */
