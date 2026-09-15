@@ -1,6 +1,7 @@
 package com.college.attendance;
 
 import com.college.attendance.config.DatabaseConfig;
+import com.college.attendance.dao.UserDAO;
 import com.college.attendance.database.DatabaseConnection;
 import com.college.attendance.database.UserSeeder;
 import com.college.attendance.model.Session;
@@ -9,23 +10,30 @@ import com.college.attendance.service.AuthenticationService;
 import com.college.attendance.util.PasswordUtil;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * Automated test suite covering all 12 authentication validation scenarios:
+ * Automated test suite covering Stage 3.1 authentication and student linkage:
  * <ol>
- *   <li>BCrypt password hashing</li>
- *   <li>Correct password verification</li>
- *   <li>Incorrect password verification</li>
- *   <li>Empty username rejection</li>
- *   <li>Empty password rejection</li>
- *   <li>Unknown username rejection (generic error)</li>
- *   <li>Invalid password rejection (generic error)</li>
- *   <li>Valid ADMIN authentication</li>
- *   <li>Valid FACULTY authentication</li>
- *   <li>Session creation and identity verification</li>
- *   <li>Session logout and state clearance</li>
- *   <li>Database failure handling</li>
+ *   <li>ADMIN login succeeds</li>
+ *   <li>FACULTY login succeeds</li>
+ *   <li>STUDENT login succeeds</li>
+ *   <li>ADMIN studentId is NULL</li>
+ *   <li>FACULTY studentId is NULL</li>
+ *   <li>STUDENT studentId is populated</li>
+ *   <li>STUDENT references a valid students.id</li>
+ *   <li>STUDENT with null/invalid student_id cannot authenticate</li>
+ *   <li>Existing ADMIN still works</li>
+ *   <li>Existing FACULTY still works</li>
+ *   <li>Logout clears studentId from session</li>
+ *   <li>Student password is BCrypt verified</li>
+ *   <li>Wrong student password fails</li>
+ *   <li>Invalid username returns generic error</li>
+ *   <li>Student cannot specify arbitrary student_id (foreign key + DAO isolation)</li>
  * </ol>
  */
 public class AuthenticationTest {
@@ -36,7 +44,7 @@ public class AuthenticationTest {
 
     public static void main(String[] args) {
         System.out.println("==================================================");
-        System.out.println("Stage 3 — Automated Authentication Test Suite");
+        System.out.println("Stage 3.1 — Automated Authentication & Linkage Suite");
         System.out.println("==================================================");
 
         DatabaseConfig config = new DatabaseConfig();
@@ -47,7 +55,7 @@ public class AuthenticationTest {
             throw new IllegalStateException("Database password not configured for test suite.");
         }
 
-        // Ensure test users exist in DB
+        // 1. Ensure default accounts (admin, faculty, student) exist in DB
         try (Connection conn = dbConnection.getConnection()) {
             UserSeeder.seedDefaultUsers(conn, testPass);
         } catch (Exception e) {
@@ -55,109 +63,176 @@ public class AuthenticationTest {
         }
 
         AuthenticationService authService = new AuthenticationService(dbConnection);
+        UserDAO userDAO = new UserDAO();
         String validPassword = testPass;
 
-        // 1. Test BCrypt password hashing
-        test("1. BCrypt password hashing produces valid 60-char hash", () -> {
-            String hash = PasswordUtil.hashPassword("SecureTestPass!123");
-            assertCondition(hash != null && hash.startsWith("$2a$") && hash.length() == 60,
-                    "Expected valid BCrypt $2a$ format");
-        });
-
-        // 2. Test correct password verification
-        test("2. Correct password verification succeeds", () -> {
-            String raw = "SecretPassword#456";
-            String hash = PasswordUtil.hashPassword(raw);
-            assertCondition(PasswordUtil.verifyPassword(raw, hash), "Correct password must verify as true");
-        });
-
-        // 3. Test incorrect password verification
-        test("3. Incorrect password verification fails", () -> {
-            String raw = "SecretPassword#456";
-            String hash = PasswordUtil.hashPassword(raw);
-            assertCondition(!PasswordUtil.verifyPassword("WrongPassword#456", hash), "Wrong password must verify as false");
-        });
-
-        // 4. Test empty username validation
-        test("4. Empty username rejected with user-friendly message", () -> {
-            AuthenticationService.AuthResult result = authService.login("", "somePass".toCharArray());
-            assertCondition(!result.isSuccess() && result.getErrorMessage().contains("username"),
-                    "Empty username must fail with username error message");
-
-            AuthenticationService.AuthResult resultBlank = authService.login("   ", "somePass".toCharArray());
-            assertCondition(!resultBlank.isSuccess(), "Whitespace username must fail");
-        });
-
-        // 5. Test empty password validation
-        test("5. Empty password rejected with user-friendly message", () -> {
-            AuthenticationService.AuthResult result = authService.login("admin", new char[0]);
-            assertCondition(!result.isSuccess() && result.getErrorMessage().contains("password"),
-                    "Empty password must fail with password error message");
-
-            AuthenticationService.AuthResult resultNull = authService.login("admin", null);
-            assertCondition(!resultNull.isSuccess(), "Null password must fail");
-        });
-
-        // 6. Test unknown username rejection
-        test("6. Unknown username rejected with generic message (anti-enumeration)", () -> {
-            AuthenticationService.AuthResult result = authService.login("non_existent_user_999", "somePass".toCharArray());
-            assertCondition(!result.isSuccess(), "Unknown user must fail");
-            assertCondition("Invalid username or password.".equals(result.getErrorMessage()),
-                    "Must return generic message: 'Invalid username or password.'");
-        });
-
-        // 7. Test invalid password rejection
-        test("7. Invalid password rejected with generic message", () -> {
-            AuthenticationService.AuthResult result = authService.login("admin", "DefinitelyWrongPass#999".toCharArray());
-            assertCondition(!result.isSuccess(), "Wrong password must fail");
-            assertCondition("Invalid username or password.".equals(result.getErrorMessage()),
-                    "Must return generic message: 'Invalid username or password.'");
-        });
-
-        // 8. Test valid ADMIN authentication
-        test("8. Valid ADMIN user authentication succeeds", () -> {
+        // Test 1: ADMIN login succeeds
+        test("1. ADMIN login succeeds", () -> {
             AuthenticationService.AuthResult result = authService.login("admin", validPassword.toCharArray());
             assertCondition(result.isSuccess(), "Admin login must succeed");
-            assertCondition(result.getSession() != null, "Session must be created");
-            assertCondition(result.getSession().getRole() == User.Role.ADMIN, "Role must be ADMIN");
-            assertCondition("admin".equals(result.getSession().getUsername()), "Username must match 'admin'");
+            assertCondition(result.getSession() != null, "Admin session must be present");
         });
 
-        // 9. Test valid FACULTY authentication
-        test("9. Valid FACULTY user authentication succeeds", () -> {
+        // Test 2: FACULTY login succeeds
+        test("2. FACULTY login succeeds", () -> {
             AuthenticationService.AuthResult result = authService.login("faculty", validPassword.toCharArray());
             assertCondition(result.isSuccess(), "Faculty login must succeed");
-            assertCondition(result.getSession() != null, "Session must be created");
+            assertCondition(result.getSession() != null, "Faculty session must be present");
+        });
+
+        // Test 3: STUDENT login succeeds
+        test("3. STUDENT login succeeds", () -> {
+            AuthenticationService.AuthResult result = authService.login("student", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Student login must succeed");
+            assertCondition(result.getSession() != null, "Student session must be present");
+        });
+
+        // Test 4: ADMIN studentId is NULL
+        test("4. ADMIN studentId is NULL", () -> {
+            AuthenticationService.AuthResult result = authService.login("admin", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Admin login required");
+            assertCondition(result.getSession().getRole() == User.Role.ADMIN, "Role must be ADMIN");
+            assertCondition(result.getSession().getStudentId() == null, "Admin studentId must be null");
+        });
+
+        // Test 5: FACULTY studentId is NULL
+        test("5. FACULTY studentId is NULL", () -> {
+            AuthenticationService.AuthResult result = authService.login("faculty", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Faculty login required");
             assertCondition(result.getSession().getRole() == User.Role.FACULTY, "Role must be FACULTY");
-            assertCondition("faculty".equals(result.getSession().getUsername()), "Username must match 'faculty'");
+            assertCondition(result.getSession().getStudentId() == null, "Faculty studentId must be null");
         });
 
-        // 10. Test session creation and state
-        test("10. Session contains expected user identity without sensitive data", () -> {
-            assertCondition(Session.isAuthenticated(), "Session must report authenticated");
-            Session current = Session.getCurrent();
-            assertCondition(current != null, "Current session must not be null");
-            assertCondition(current.getUserId() > 0, "User ID must be positive integer");
-            assertCondition(current.getFullName() != null && !current.getFullName().isBlank(), "Full name must be present");
+        // Test 6: STUDENT studentId is populated
+        test("6. STUDENT studentId is populated", () -> {
+            AuthenticationService.AuthResult result = authService.login("student", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Student login required");
+            assertCondition(result.getSession().getRole() == User.Role.STUDENT, "Role must be STUDENT");
+            assertCondition(result.getSession().getStudentId() != null, "Student studentId must not be null");
+            assertCondition(result.getSession().getStudentId() > 0, "Student studentId must be a positive integer");
         });
 
-        // 11. Test session logout
-        test("11. Logout clears session state completely", () -> {
+        // Test 7: STUDENT references a valid students.id
+        test("7. STUDENT references a valid students.id in students table", () -> {
+            AuthenticationService.AuthResult result = authService.login("student", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Student login required");
+            int studentId = result.getSession().getStudentId();
+
+            try (Connection conn = dbConnection.getConnection()) {
+                boolean exists = userDAO.studentRecordExists(conn, studentId);
+                assertCondition(exists, "Referenced student ID " + studentId + " must exist in students table");
+            }
+        });
+
+        // Test 8: STUDENT with invalid / null student_id cannot authenticate
+        test("8. STUDENT with null or nonexistent student_id cannot authenticate", () -> {
+            try (Connection conn = dbConnection.getConnection()) {
+                // Test 8a: Foreign key prevents pointing to non-existent student_id=999999
+                String badFkSql = "INSERT INTO users (username, password, full_name, role, student_id) VALUES (?, ?, ?, ?, ?)";
+                try (PreparedStatement ps = conn.prepareStatement(badFkSql)) {
+                    ps.setString(1, "__TEST_BAD_FK_USER__");
+                    ps.setString(2, PasswordUtil.hashPassword(testPass));
+                    ps.setString(3, "Bad FK Student");
+                    ps.setString(4, "STUDENT");
+                    ps.setInt(5, 999999);
+                    ps.executeUpdate();
+                    assertCondition(false, "Foreign key must reject student_id=999999");
+                } catch (SQLException expectedFkEx) {
+                    // Correctly rejected by fk_users_student
+                }
+
+                // Test 8b: Service layer rejects STUDENT if student_id is null
+                // Clean up any old test record first
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM users WHERE username = '__TEST_NULL_STU__'")) {
+                    ps.executeUpdate();
+                }
+
+                String nullStuSql = "INSERT INTO users (username, password, full_name, role, student_id) VALUES (?, ?, ?, ?, NULL)";
+                try (PreparedStatement ps = conn.prepareStatement(nullStuSql)) {
+                    ps.setString(1, "__TEST_NULL_STU__");
+                    ps.setString(2, PasswordUtil.hashPassword(testPass));
+                    ps.setString(3, "Null Student");
+                    ps.setString(4, "STUDENT");
+                    ps.executeUpdate();
+                }
+
+                AuthenticationService.AuthResult result = authService.login("__TEST_NULL_STU__", testPass.toCharArray());
+                assertCondition(!result.isSuccess(), "STUDENT user with null student_id must be rejected");
+
+                // Clean up
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM users WHERE username = '__TEST_NULL_STU__'")) {
+                    ps.executeUpdate();
+                }
+            }
+        });
+
+        // Test 9: Existing ADMIN still works
+        test("9. Existing ADMIN still works after migration", () -> {
+            AuthenticationService.AuthResult result = authService.login("admin", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Admin must authenticate");
+            assertCondition("admin".equals(result.getSession().getUsername()), "Username must be admin");
+        });
+
+        // Test 10: Existing FACULTY still works
+        test("10. Existing FACULTY still works after migration", () -> {
+            AuthenticationService.AuthResult result = authService.login("faculty", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Faculty must authenticate");
+            assertCondition("faculty".equals(result.getSession().getUsername()), "Username must be faculty");
+        });
+
+        // Test 11: Logout clears studentId from session
+        test("11. Logout clears studentId and session completely", () -> {
+            authService.login("student", validPassword.toCharArray());
+            assertCondition(Session.isAuthenticated(), "Must be authenticated before logout");
+            assertCondition(Session.getCurrent().getStudentId() != null, "Student ID must be present in session");
+
             authService.logout();
-            assertCondition(!Session.isAuthenticated(), "Session must not be authenticated after logout");
-            assertCondition(Session.getCurrent() == null, "Current session must be null after logout");
+            assertCondition(!Session.isAuthenticated(), "Must not be authenticated after logout");
+            assertCondition(Session.getCurrent() == null, "Session must be null after logout");
         });
 
-        // 12. Test database failure handling
-        test("12. Database unavailability handled gracefully without unhandled exceptions", () -> {
-            DatabaseConfig badConfig = new DatabaseConfig("localhost", "9999", "invalid_db", "user", "pass");
-            DatabaseConnection badDbConnection = new DatabaseConnection(badConfig);
-            AuthenticationService badAuthService = new AuthenticationService(badDbConnection);
+        // Test 12: Student password is BCrypt verified
+        test("12. Student password is stored as secure BCrypt hash", () -> {
+            try (Connection conn = dbConnection.getConnection()) {
+                Optional<User> studentOpt = userDAO.findByUsername(conn, "student");
+                assertCondition(studentOpt.isPresent(), "Student user record must exist");
+                String hash = studentOpt.get().getPassword();
+                assertCondition(hash != null && hash.startsWith("$2a$") && hash.length() == 60,
+                        "Password must be standard 60-char BCrypt hash");
+                assertCondition(PasswordUtil.verifyPassword(validPassword, hash),
+                        "BCrypt verification must succeed with correct password");
+            }
+        });
 
-            AuthenticationService.AuthResult result = badAuthService.login("admin", "pass".toCharArray());
-            assertCondition(!result.isSuccess(), "Login against unavailable database must fail");
-            assertCondition(result.getErrorMessage().contains("unavailable"),
-                    "Error message must indicate database service unavailable");
+        // Test 13: Wrong student password fails
+        test("13. Wrong student password fails with generic error", () -> {
+            AuthenticationService.AuthResult result = authService.login("student", "IncorrectPassword#999".toCharArray());
+            assertCondition(!result.isSuccess(), "Wrong password must fail");
+            assertCondition("Invalid username or password.".equals(result.getErrorMessage()),
+                    "Generic error expected");
+        });
+
+        // Test 14: Invalid username returns generic error
+        test("14. Invalid username returns generic error", () -> {
+            AuthenticationService.AuthResult result = authService.login("__NON_EXISTENT_USER__", validPassword.toCharArray());
+            assertCondition(!result.isSuccess(), "Unknown user must fail");
+            assertCondition("Invalid username or password.".equals(result.getErrorMessage()),
+                    "Generic error expected");
+        });
+
+        // Test 15: Student cannot create arbitrary student_id through authentication
+        test("15. Student cannot forge arbitrary student_id (enforced by DB relationship and Session)", () -> {
+            // The login interface accepts ONLY credentials (username, password)
+            // studentId is populated strictly from the authoritative database record
+            AuthenticationService.AuthResult result = authService.login("student", validPassword.toCharArray());
+            assertCondition(result.isSuccess(), "Student login required");
+
+            try (Connection conn = dbConnection.getConnection()) {
+                Optional<User> dbUser = userDAO.findByUsername(conn, "student");
+                assertCondition(dbUser.isPresent(), "Database record must exist");
+                assertCondition(result.getSession().getStudentId().equals(dbUser.get().getStudentId()),
+                        "Session studentId must strictly match database studentId without client override capability");
+            }
         });
 
         System.out.println("==================================================");

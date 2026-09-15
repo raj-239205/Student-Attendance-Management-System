@@ -16,20 +16,32 @@ A college attendance management system built with Core Java as a college Advance
 
 ## Current Stage
 
-**Stage 3 — Authentication & Login System**
+**Stage 3.1 — Student Role & Student Account Linking**
 
 - [x] Maven project and JDBC connectivity (`college_attendance_db`)
 - [x] Hardened relational database schema (4 tables with PK, FK, CHECK, and UNIQUE constraints)
 - [x] Dedicated local MySQL application user (`attendance_app` with least-privilege grants)
 - [x] Salted BCrypt password hashing (`PasswordUtil.java`)
 - [x] User Data Access Object (`UserDAO.java`) with `PreparedStatement`
-- [x] Authentication service (`AuthenticationService.java`) with anti-enumeration protection
-- [x] Thread-safe in-memory session management (`Session.java`)
+- [x] Three supported roles: `ADMIN`, `FACULTY`, `STUDENT`
+- [x] Explicit `student_id` foreign key link between `users` and `students` table (`fk_users_student`)
+- [x] Account linkage validation enforcing that `STUDENT` users must link to a valid student record
+- [x] Thread-safe in-memory session management (`Session.java`) supporting `studentId`
 - [x] Modern, polished Swing Login Window (`LoginWindow.java`)
-- [x] Temporary authenticated verification window (`AuthenticatedPlaceholderWindow.java`) with logout support
-- [x] 12-point automated authentication test suite (`AuthenticationTest.java`)
+- [x] Temporary authenticated verification window (`AuthenticatedPlaceholderWindow.java`) showing role and Student ID
+- [x] 15-point automated authentication and linkage test suite (`AuthenticationTest.java`)
 
-## Authentication & Security Architecture
+## User Roles & Data Isolation Architecture
+
+| Role | Purpose & Scope | `student_id` Linkage |
+|---|---|---|
+| **`ADMIN`** | System administration, user accounts, master academic management. | `NULL` |
+| **`FACULTY`** | Marking daily attendance, course management, viewing defaulter lists. | `NULL` |
+| **`STUDENT`** | Viewing their own attendance percentage and personal records. | Required (`students.id` FK) |
+
+### Student Data Isolation
+- A student user account is linked to exactly one `students.id` via the `users.student_id` foreign key.
+- Future student attendance queries are strictly anchored to `Session.getStudentId()` rather than user-entered parameters, guaranteeing robust data isolation.
 
 ### Credentials & Least Privilege
 The application connects via a dedicated non-root MySQL user:

@@ -1,13 +1,11 @@
 package com.college.attendance.model;
 
 /**
- * Lightweight, thread-safe session container for the currently authenticated
- * user.
+ * Lightweight, thread-safe session container for the currently authenticated user.
  *
  * <p>
- * Holds only non-sensitive identity attributes: ID, username, full name, and
- * role.
- * Passwords and hashes are strictly excluded.
+ * Holds only non-sensitive identity attributes: ID, username, full name, role,
+ * and optional linked studentId. Passwords and hashes are strictly excluded.
  * </p>
  */
 public final class Session {
@@ -18,12 +16,14 @@ public final class Session {
     private final String username;
     private final String fullName;
     private final User.Role role;
+    private final Integer studentId;
 
-    private Session(int userId, String username, String fullName, User.Role role) {
+    private Session(int userId, String username, String fullName, User.Role role, Integer studentId) {
         this.userId = userId;
         this.username = username;
         this.fullName = fullName;
         this.role = role;
+        this.studentId = studentId;
     }
 
     /**
@@ -36,15 +36,20 @@ public final class Session {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null when starting a session.");
         }
-        instance = new Session(user.getId(), user.getUsername(), user.getFullName(), user.getRole());
+        instance = new Session(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getRole(),
+                user.getStudentId()
+        );
         return instance;
     }
 
     /**
      * Retrieves the current active session.
      *
-     * @return the current {@link Session}, or {@code null} if no user is
-     *         authenticated
+     * @return the current {@link Session}, or {@code null} if no user is authenticated
      */
     public static Session getCurrent() {
         return instance;
@@ -84,6 +89,10 @@ public final class Session {
         return role;
     }
 
+    public Integer getStudentId() {
+        return studentId;
+    }
+
     @Override
     public String toString() {
         return "Session{"
@@ -91,6 +100,7 @@ public final class Session {
                 + ", username='" + username + '\''
                 + ", fullName='" + fullName + '\''
                 + ", role=" + role
+                + ", studentId=" + studentId
                 + '}';
     }
 }

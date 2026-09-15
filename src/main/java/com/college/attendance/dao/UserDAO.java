@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +21,8 @@ import java.util.logging.Logger;
  * <ul>
  * <li>Query user identity and credentials by username using
  * {@link PreparedStatement}.</li>
- * <li>Insert new user accounts with pre-hashed passwords.</li>
+ * <li>Populate user roles (ADMIN, FACULTY, STUDENT) and linked studentId.</li>
+ * <li>Insert new user accounts with pre-hashed passwords and student linkages.</li>
  * <li>Safe resource management with try-with-resources.</li>
  * </ul>
  * </p>
@@ -46,7 +48,7 @@ public class UserDAO {
             return Optional.empty();
         }
 
-        String sql = "SELECT id, username, password, full_name, role, created_at, updated_at "
+        String sql = "SELECT id, username, password, full_name, role, student_id, created_at, updated_at "
                 + "FROM users WHERE username = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -54,28 +56,62 @@ public class UserDAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    User user = new User();
-                    user.setId(rs.getInt("id"));
-                    user.setUsername(rs.getString("username"));
-                    user.setPassword(rs.getString("password"));
-                    user.setFullName(rs.getString("full_name"));
-                    user.setRole(User.Role.valueOf(rs.getString("role")));
-
-                    Timestamp createdAt = rs.getTimestamp("created_at");
-                    if (createdAt != null) {
-                        user.setCreatedAt(createdAt.toLocalDateTime());
-                    }
-
-                    Timestamp updatedAt = rs.getTimestamp("updated_at");
-                    if (updatedAt != null) {
-                        user.setUpdatedAt(updatedAt.toLocalDateTime());
-                    }
-
-                    return Optional.of(user);
+                    return Optional.of(mapRowToUser(rs));
                 }
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Finds a user account linked to a specific student ID.
+     *
+     * @param connection an active JDBC connection
+     * @param studentId  the student primary key ID
+     * @return an {@link Optional} containing the user if found, or empty otherwise
+     * @throws SQLException if a database access error occurs
+     */
+    public Optional<User> findByStudentId(Connection connection, int studentId) throws SQLException {
+        if (connection == null) {
+            return Optional.empty();
+        }
+
+        String sql = "SELECT id, username, password, full_name, role, student_id, created_at, updated_at "
+                + "FROM users WHERE student_id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, studentId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRowToUser(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Checks whether a student record exists in the {@code students} table.
+     *
+     * @param connection an active JDBC connection
+     * @param studentId  the student primary key ID
+     * @return true if the student exists, false otherwise
+     */
+    public boolean studentRecordExists(Connection connection, int studentId) {
+        if (connection == null) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM students WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, studentId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "Error verifying student existence: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -92,13 +128,19 @@ public class UserDAO {
             throw new IllegalArgumentException("Connection and User cannot be null.");
         }
 
-        String sql = "INSERT INTO users (username, password, full_name, role) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, password, full_name, role, student_id) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getUsername().trim());
             stmt.setString(2, user.getPassword());
             stmt.setString(3, user.getFullName().trim());
             stmt.setString(4, user.getRole().name());
+
+            if (user.getStudentId() != null) {
+                stmt.setInt(5, user.getStudentId());
+            } else {
+                stmt.setNull(5, Types.INTEGER);
+            }
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows == 0) {
@@ -136,5 +178,33 @@ public class UserDAO {
             LOGGER.log(Level.WARNING, "Error counting users: " + e.getMessage());
         }
         return 0;
+    }
+
+    private User mapRowToUser(ResultSet rs) throws SQLException {
+        User user = new User();
+        user.setId(rs.getInt("id"));
+        user.setUsername(rs.getString("username"));
+        user.setPassword(rs.getString("password"));
+        user.setFullName(rs.getString("full_name"));
+        user.setRole(User.Role.valueOf(rs.getString("role")));
+
+        int sId = rs.getInt("student_id");
+        if (!rs.wasNull()) {
+            user.setStudentId(sId);
+        } else {
+            user.setStudentId(null);
+        }
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            user.setCreatedAt(createdAt.toLocalDateTime());
+        }
+
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        if (updatedAt != null) {
+            user.setUpdatedAt(updatedAt.toLocalDateTime());
+        }
+
+        return user;
     }
 }

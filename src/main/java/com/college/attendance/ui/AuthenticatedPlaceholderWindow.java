@@ -1,6 +1,7 @@
 package com.college.attendance.ui;
 
 import com.college.attendance.model.Session;
+import com.college.attendance.model.User;
 import com.college.attendance.service.AuthenticationService;
 
 import javax.swing.*;
@@ -11,16 +12,16 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 
 /**
- * Temporary Authenticated Screen for Stage 3 verification.
+ * Temporary Authenticated Screen for Stage 3.1 verification.
  *
  * <p>
- * Confirms successful authentication and session creation.
+ * Confirms successful authentication and session creation for ADMIN, FACULTY, and STUDENT.
  * Displays:
  * <ul>
  *   <li>System Title</li>
  *   <li>User Full Name</li>
- *   <li>User Role (ADMIN / FACULTY)</li>
- *   <li>Username</li>
+ *   <li>User Role (ADMIN / FACULTY / STUDENT)</li>
+ *   <li>Student ID (displayed only for STUDENT accounts)</li>
  *   <li>Logout Button (destroys session and returns to login)</li>
  * </ul>
  * Note: The full Dashboard will be implemented in Stage 4.
@@ -33,8 +34,9 @@ public class AuthenticatedPlaceholderWindow extends JFrame {
     private static final Color COLOR_CARD_BORDER = new Color(51, 65, 85); // Slate 700
     private static final Color COLOR_TEXT_PRIMARY = new Color(248, 250, 252);
     private static final Color COLOR_TEXT_MUTED = new Color(148, 163, 184);
-    private static final Color COLOR_BADGE_ADMIN = new Color(126, 34, 206);   // Purple
-    private static final Color COLOR_BADGE_FACULTY = new Color(14, 116, 144); // Cyan
+    private static final Color COLOR_ROLE_ADMIN = new Color(192, 132, 252);   // Purple
+    private static final Color COLOR_ROLE_FACULTY = new Color(56, 189, 248);  // Sky Blue
+    private static final Color COLOR_ROLE_STUDENT = new Color(52, 211, 153);  // Emerald
     private static final Color COLOR_LOGOUT_BTN = new Color(225, 29, 72);     // Rose 600
     private static final Color COLOR_LOGOUT_HOVER = new Color(190, 18, 60);   // Rose 700
 
@@ -50,8 +52,8 @@ public class AuthenticatedPlaceholderWindow extends JFrame {
     private void initUI() {
         setTitle("College Attendance Management System — Authenticated");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(560, 460);
-        setMinimumSize(new Dimension(500, 400));
+        setSize(560, 480);
+        setMinimumSize(new Dimension(500, 420));
         setLocationRelativeTo(null);
         getContentPane().setBackground(COLOR_BG);
 
@@ -63,7 +65,7 @@ public class AuthenticatedPlaceholderWindow extends JFrame {
         JPanel cardPanel = new RoundedPanel(24, COLOR_CARD, COLOR_CARD_BORDER);
         cardPanel.setLayout(new BoxLayout(cardPanel, BoxLayout.Y_AXIS));
         cardPanel.setBorder(new EmptyBorder(36, 40, 36, 40));
-        cardPanel.setMaximumSize(new Dimension(460, 360));
+        cardPanel.setMaximumSize(new Dimension(460, 380));
 
         // App badge
         JLabel badgeLabel = new JLabel("COLLEGE ATTENDANCE MANAGEMENT SYSTEM");
@@ -84,8 +86,8 @@ public class AuthenticatedPlaceholderWindow extends JFrame {
 
         cardPanel.add(Box.createVerticalStrut(6));
 
-        // Stage 3 status indicator
-        JLabel stageLabel = new JLabel("Stage 3 Authentication Successful");
+        // Stage 3.1 status indicator
+        JLabel stageLabel = new JLabel("Stage 3.1 Authentication & Linkage Successful");
         stageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         stageLabel.setForeground(new Color(52, 211, 153)); // Emerald green
         stageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -94,20 +96,39 @@ public class AuthenticatedPlaceholderWindow extends JFrame {
         cardPanel.add(Box.createVerticalStrut(24));
 
         // Info table panel
-        JPanel infoPanel = new JPanel(new GridLayout(2, 2, 12, 10));
+        boolean isStudent = session != null && session.getRole() == User.Role.STUDENT;
+        int gridRows = isStudent ? 2 : 1;
+        int gridCols = isStudent ? 2 : 2;
+
+        JPanel infoPanel = new JPanel(new GridLayout(gridRows, gridCols, 12, 10));
         infoPanel.setOpaque(false);
-        infoPanel.setMaximumSize(new Dimension(360, 70));
+        infoPanel.setMaximumSize(new Dimension(360, isStudent ? 120 : 60));
 
         String username = (session != null) ? session.getUsername() : "-";
-        String roleStr = (session != null && session.getRole() != null) ? session.getRole().name() : "-";
+        User.Role role = (session != null) ? session.getRole() : null;
+        String roleStr = (role != null) ? role.name() : "-";
+
+        Color roleColor = COLOR_TEXT_PRIMARY;
+        if (role == User.Role.ADMIN) {
+            roleColor = COLOR_ROLE_ADMIN;
+        } else if (role == User.Role.FACULTY) {
+            roleColor = COLOR_ROLE_FACULTY;
+        } else if (role == User.Role.STUDENT) {
+            roleColor = COLOR_ROLE_STUDENT;
+        }
 
         infoPanel.add(createInfoTile("USERNAME", username, COLOR_TEXT_PRIMARY));
-        infoPanel.add(createInfoTile("ROLE", roleStr,
-                "ADMIN".equals(roleStr) ? new Color(192, 132, 252) : new Color(56, 189, 248)));
+        infoPanel.add(createInfoTile("ROLE", roleStr, roleColor));
+
+        if (isStudent) {
+            String studentIdStr = (session.getStudentId() != null) ? String.valueOf(session.getStudentId()) : "-";
+            infoPanel.add(createInfoTile("STUDENT ID", studentIdStr, COLOR_ROLE_STUDENT));
+            infoPanel.add(createInfoTile("STATUS", "Active Enrollment", new Color(148, 163, 184)));
+        }
 
         cardPanel.add(infoPanel);
 
-        cardPanel.add(Box.createVerticalStrut(30));
+        cardPanel.add(Box.createVerticalStrut(28));
 
         // Logout Button
         JButton logoutButton = new ModernLogoutButton("Logout");

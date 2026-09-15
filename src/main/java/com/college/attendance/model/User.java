@@ -3,8 +3,14 @@ package com.college.attendance.model;
 import java.time.LocalDateTime;
 
 /**
- * Represents a system user (admin or faculty).
+ * Represents a system user account (ADMIN, FACULTY, or STUDENT).
  * Maps to the {@code users} table.
+ *
+ * <p>
+ * For STUDENT accounts, {@code studentId} holds the foreign key reference
+ * to the associated student record in the {@code students} table.
+ * For ADMIN and FACULTY accounts, {@code studentId} is {@code null}.
+ * </p>
  */
 public class User {
 
@@ -13,22 +19,28 @@ public class User {
     private String password;
     private String fullName;
     private Role role;
+    private Integer studentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     /** Supported user roles. */
     public enum Role {
-        ADMIN, FACULTY
+        ADMIN, FACULTY, STUDENT
     }
 
     public User() {
     }
 
     public User(String username, String password, String fullName, Role role) {
+        this(username, password, fullName, role, null);
+    }
+
+    public User(String username, String password, String fullName, Role role, Integer studentId) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;
         this.role = role;
+        this.studentId = studentId;
     }
 
     // --- Getters & Setters ---
@@ -73,6 +85,14 @@ public class User {
         this.role = role;
     }
 
+    public Integer getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(Integer studentId) {
+        this.studentId = studentId;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -95,6 +115,7 @@ public class User {
                 + ", username='" + username + '\''
                 + ", fullName='" + fullName + '\''
                 + ", role=" + role
+                + ", studentId=" + studentId
                 + '}';
     }
 }

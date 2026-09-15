@@ -14,15 +14,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Service orchestrating authentication workflows.
+ * Service orchestrating authentication workflows for ADMIN, FACULTY, and STUDENT users.
  *
  * <p>
  * Decouples the UI layer from database access and cryptographic hashing.
- * Enforces secure credentials handling:
+ * Enforces secure credentials handling and identity validation:
  * <ul>
- * <li>Generic error messaging for failed attempts to prevent user
- * enumeration.</li>
- * <li>Clearing raw password character buffers after verification.</li>
+ * <li>Generic error messaging for failed attempts to prevent user enumeration.</li>
+ * <li>Ensures STUDENT accounts reference an existing, valid student record.</li>
+ * <li>Ensures ADMIN and FACULTY accounts have no student_id link.</li>
+ * <li>Clears raw password character buffers immediately after verification.</li>
  * <li>Graceful handling of database unavailability.</li>
  * </ul>
  * </p>
@@ -123,9 +124,28 @@ public class AuthenticationService {
                     return AuthResult.failure(GENERIC_AUTH_ERROR);
                 }
 
-                // 5. Initialize session
+                // 5. Role-specific student linkage verification
+                if (user.getRole() == User.Role.STUDENT) {
+                    if (user.getStudentId() == null) {
+                        LOGGER.warning("Authentication failed: STUDENT account '" + trimmedUser + "' has no linked student_id.");
+                        return AuthResult.failure(GENERIC_AUTH_ERROR);
+                    }
+                    if (!userDAO.studentRecordExists(conn, user.getStudentId())) {
+                        LOGGER.warning("Authentication failed: STUDENT account '" + trimmedUser + "' references non-existent student ID " + user.getStudentId());
+                        return AuthResult.failure(GENERIC_AUTH_ERROR);
+                    }
+                } else {
+                    // ADMIN and FACULTY must NOT be linked to a student
+                    if (user.getStudentId() != null) {
+                        LOGGER.warning("Authentication failed: Non-student role account '" + trimmedUser + "' unexpectedly linked to student_id.");
+                        return AuthResult.failure(GENERIC_AUTH_ERROR);
+                    }
+                }
+
+                // 6. Initialize session
                 Session session = Session.start(user);
-                LOGGER.info("Authentication successful: " + user.getUsername() + " [" + user.getRole() + "].");
+                LOGGER.info("Authentication successful: " + user.getUsername() + " [" + user.getRole()
+                        + (user.getStudentId() != null ? ", studentId=" + user.getStudentId() : "") + "].");
                 return AuthResult.success(session);
 
             } catch (SQLException e) {

@@ -7,23 +7,7 @@
 -- ============================================================
 
 -- -----------------------------------------------------------
--- 1. USERS (admin / faculty accounts)
--- -----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS users (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    username    VARCHAR(50)  NOT NULL,
-    password    VARCHAR(255) NOT NULL,
-    full_name   VARCHAR(100) NOT NULL,
-    role        ENUM('ADMIN', 'FACULTY') NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT uq_users_username UNIQUE (username),
-    CONSTRAINT chk_users_role CHECK (role IN ('ADMIN', 'FACULTY'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- -----------------------------------------------------------
--- 2. STUDENTS
+-- 1. STUDENTS
 -- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
     id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,7 +31,7 @@ CREATE TABLE IF NOT EXISTS students (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
--- 3. SUBJECTS
+-- 2. SUBJECTS
 -- -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS subjects (
     id            INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,6 +46,29 @@ CREATE TABLE IF NOT EXISTS subjects (
 
     INDEX idx_subjects_branch   (branch),
     INDEX idx_subjects_semester (semester)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- 3. USERS (admin / faculty / student accounts)
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    username    VARCHAR(50)  NOT NULL,
+    password    VARCHAR(255) NOT NULL,
+    full_name   VARCHAR(100) NOT NULL,
+    role        ENUM('ADMIN', 'FACULTY', 'STUDENT') NOT NULL,
+    student_id  INT          DEFAULT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_users_username UNIQUE (username),
+    CONSTRAINT uq_users_student_id UNIQUE (student_id),
+    CONSTRAINT chk_users_role CHECK (role IN ('ADMIN', 'FACULTY', 'STUDENT')),
+
+    -- Foreign key to students (for STUDENT role accounts)
+    CONSTRAINT fk_users_student
+        FOREIGN KEY (student_id) REFERENCES students(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
