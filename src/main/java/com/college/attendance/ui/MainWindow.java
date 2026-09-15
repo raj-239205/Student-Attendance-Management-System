@@ -20,7 +20,9 @@ import com.college.attendance.ui.views.AttendanceManagementView;
 import com.college.attendance.ui.views.FacultyDashboardView;
 import com.college.attendance.ui.views.ModulePlaceholderView;
 import com.college.attendance.service.DefaulterService;
+import com.college.attendance.service.ReportService;
 import com.college.attendance.ui.views.DefaulterManagementView;
+import com.college.attendance.ui.views.ReportsAnalyticsView;
 import com.college.attendance.ui.views.StudentAttendanceView;
 import com.college.attendance.ui.views.StudentDashboardView;
 import com.college.attendance.ui.views.StudentManagementView;
@@ -67,6 +69,7 @@ public class MainWindow extends JFrame {
     private final SubjectService subjectService;
     private final AttendanceService attendanceService;
     private final DefaulterService defaulterService;
+    private final ReportService reportService;
 
     private CardLayout cardLayout;
     private JPanel contentContainer;
@@ -86,6 +89,7 @@ public class MainWindow extends JFrame {
         this.subjectService = new SubjectService(dbConnection);
         this.attendanceService = new AttendanceService(dbConnection);
         this.defaulterService = new DefaulterService(dbConnection);
+        this.reportService = new ReportService(dbConnection);
 
         initUI();
     }
@@ -287,6 +291,9 @@ public class MainWindow extends JFrame {
                 } else if (item == NavigationItem.DEFAULTERS) {
                     // Full Automatic Defaulter Management Module for ADMIN and FACULTY
                     contentContainer.add(new DefaulterManagementView(defaulterService, subjectService, session.getRole()), item.name());
+                } else if (item == NavigationItem.REPORTS) {
+                    // Full Reports & Analytics Module for ADMIN and FACULTY
+                    contentContainer.add(new ReportsAnalyticsView(reportService, subjectService, session.getRole()), item.name());
                 } else if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_ATTENDANCE) {
                     // Dedicated student attendance inspection view
                     contentContainer.add(new StudentAttendanceView(attendanceService, session), item.name());
