@@ -38,6 +38,7 @@ public class AuthorizationService {
             EnumSet.of(
                     NavigationItem.DASHBOARD,
                     NavigationItem.STUDENTS,
+                    NavigationItem.SUBJECTS,
                     NavigationItem.ATTENDANCE,
                     NavigationItem.DEFAULTERS,
                     NavigationItem.REPORTS
@@ -108,6 +109,7 @@ public class AuthorizationService {
             case FACULTY -> List.of(
                     NavigationItem.DASHBOARD,
                     NavigationItem.STUDENTS,
+                    NavigationItem.SUBJECTS,
                     NavigationItem.ATTENDANCE,
                     NavigationItem.DEFAULTERS,
                     NavigationItem.REPORTS

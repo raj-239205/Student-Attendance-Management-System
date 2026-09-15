@@ -7,6 +7,7 @@ import com.college.attendance.security.AuthorizationService;
 import com.college.attendance.service.AuthenticationService;
 import com.college.attendance.service.DashboardService;
 import com.college.attendance.service.StudentService;
+import com.college.attendance.service.SubjectService;
 import com.college.attendance.ui.components.Badge;
 import com.college.attendance.ui.components.RoundedPanel;
 import com.college.attendance.ui.components.SidebarNavButton;
@@ -18,6 +19,7 @@ import com.college.attendance.ui.views.FacultyDashboardView;
 import com.college.attendance.ui.views.ModulePlaceholderView;
 import com.college.attendance.ui.views.StudentDashboardView;
 import com.college.attendance.ui.views.StudentManagementView;
+import com.college.attendance.ui.views.SubjectManagementView;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -57,6 +59,7 @@ public class MainWindow extends JFrame {
     private final AuthorizationService authorizationService;
     private final DashboardService dashboardService;
     private final StudentService studentService;
+    private final SubjectService subjectService;
 
     private CardLayout cardLayout;
     private JPanel contentContainer;
@@ -73,6 +76,7 @@ public class MainWindow extends JFrame {
         this.authorizationService = new AuthorizationService();
         this.dashboardService = new DashboardService(dbConnection);
         this.studentService = new StudentService(dbConnection);
+        this.subjectService = new SubjectService(dbConnection);
 
         initUI();
     }
@@ -265,6 +269,9 @@ public class MainWindow extends JFrame {
                 if (item == NavigationItem.STUDENTS) {
                     // Full Student Management Module for authorized roles
                     contentContainer.add(new StudentManagementView(studentService, session.getRole()), item.name());
+                } else if (item == NavigationItem.SUBJECTS) {
+                    // Full Subject Management Module for authorized roles (ADMIN full CRUD, FACULTY read-only)
+                    contentContainer.add(new SubjectManagementView(subjectService, session.getRole()), item.name());
                 } else if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_ATTENDANCE) {
                     contentContainer.add(new StudentDashboardView(dashboardService, session), item.name());
                 } else {

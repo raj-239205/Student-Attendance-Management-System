@@ -16,7 +16,7 @@ A college attendance management system built with Core Java as a college Advance
 
 ## Current Stage
 
-**Stage 5 — Student Management Module**
+**Stage 6 — Subject Management Module**
 
 - [x] Maven project and JDBC connectivity (`college_attendance_db`)
 - [x] Hardened relational database schema (4 tables with PK, FK, CHECK, and UNIQUE constraints)
@@ -40,10 +40,20 @@ A college attendance management system built with Core Java as a college Advance
 - [x] Student Table Model (`StudentTableModel.java`) with custom dark table renderers
 - [x] Modal Enrollment & Edit Dialog (`StudentFormDialog.java`) with inline validation error banners
 - [x] Read-Only Profile Inspection Dialog (`StudentDetailsDialog.java`)
-- [x] Foreign-key referential integrity protection on deletion (safe restriction handling)
+- [x] Complete Subject Management Module (`SubjectManagementView.java`) replacing the placeholder
+- [x] Subject Data Access Object (`SubjectDAO.java`) with parameterized queries, search, and referential checks
+- [x] Subject Business & Validation Service (`SubjectService.java`) with input integrity rules and programmatic RBAC
+- [x] Subject Table Model (`SubjectTableModel.java`) with custom dark table renderers
+- [x] Modal Course Add & Edit Dialog (`SubjectFormDialog.java`) with inline validation error banners
+- [x] Read-Only Course Inspection Dialog (`SubjectDetailsDialog.java`)
+- [x] Role-Guarded Controls: ADMIN full CRUD; FACULTY "Academic View Mode (Read-Only)"; STUDENT strictly denied
+- [x] Foreign-key referential integrity protection against deleting subjects referenced by attendance records
+- [x] Asynchronous SwingWorker concurrency preventing Swing EDT freezing on database operations
 - [x] 15-point automated authentication test suite (`AuthenticationTest.java`)
 - [x] 57-point automated dashboard and authorization test suite (`DashboardAuthorizationTest.java`)
 - [x] 33-point automated student management test suite (`StudentManagementTest.java`)
+- [x] 34-point automated subject management test suite (`SubjectManagementTest.java`)
+- [x] Total automated test suite: 139 passed, 0 failed
 
 ## User Roles & Data Isolation Architecture
 

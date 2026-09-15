@@ -73,8 +73,8 @@ public class DashboardAuthorizationTest {
         assertTrue("FACULTY has access to ATTENDANCE", authz.canAccess(User.Role.FACULTY, NavigationItem.ATTENDANCE));
         assertTrue("FACULTY has access to DEFAULTERS", authz.canAccess(User.Role.FACULTY, NavigationItem.DEFAULTERS));
         assertTrue("FACULTY has access to REPORTS", authz.canAccess(User.Role.FACULTY, NavigationItem.REPORTS));
-        assertFalse("FACULTY is denied SUBJECTS management", authz.canAccess(User.Role.FACULTY, NavigationItem.SUBJECTS));
-        assertTrue("FACULTY allowed items count equals 5", facultyItems.size() == 5);
+        assertTrue("FACULTY has access to SUBJECTS (read-only)", authz.canAccess(User.Role.FACULTY, NavigationItem.SUBJECTS));
+        assertTrue("FACULTY allowed items count equals 6", facultyItems.size() == 6);
 
         // Test 3: STUDENT permissions & isolation
         List<NavigationItem> studentItems = authz.getAllowedNavigationItems(User.Role.STUDENT);
