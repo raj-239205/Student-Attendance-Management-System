@@ -16,7 +16,7 @@ A college attendance management system built with Core Java as a college Advance
 
 ## Current Stage
 
-**Stage 7 — Attendance Management Module**
+**Stage 8 — Automatic Defaulter Management Module**
 
 - [x] Maven project and JDBC connectivity (`college_attendance_db`)
 - [x] Hardened relational database schema (4 tables with PK, FK, CHECK, and UNIQUE constraints)
@@ -54,12 +54,20 @@ A college attendance management system built with Core Java as a college Advance
 - [x] Dedicated Student Attendance View (`StudentAttendanceView.java`) for `NavigationItem.MY_ATTENDANCE` strictly bound to `Session.getStudentId()`
 - [x] Automatic duplicate prevention via database unique constraint (`uq_attendance_record`) and graceful re-marking support
 - [x] Role-Guarded Controls: ADMIN (full management & delete), FACULTY (marking & updates), STUDENT (read-only personal access)
+- [x] Complete Automatic Defaulter Management Module (`DefaulterManagementView.java`) for `NavigationItem.DEFAULTERS`
+- [x] Defaulter Record model (`DefaulterRecord.java`) and Aggregate Summary model (`DefaulterSummary.java`)
+- [x] Dynamic Defaulter Data Access Object (`DefaulterDAO.java`) with zero schema changes, computing live aggregations from attendance records
+- [x] Defaulter Service (`DefaulterService.java`) enforcing strict `<` comparison threshold, deficit math, and programmatic RBAC
+- [x] Defaulter Table Model (`DefaulterTableModel.java`) displaying sort order (lowest attendance first) and status badges
+- [x] Configurable Threshold input supporting dynamic re-calculation (default: `75.0%` defined in `AppConstants`)
+- [x] Real-time KPI summary cards: Total Evaluated, Defaulters Count, Safe Students Count, Defaulter Rate %
 - [x] 15-point automated authentication test suite (`AuthenticationTest.java`)
 - [x] 57-point automated dashboard and authorization test suite (`DashboardAuthorizationTest.java`)
 - [x] 33-point automated student management test suite (`StudentManagementTest.java`)
 - [x] 34-point automated subject management test suite (`SubjectManagementTest.java`)
 - [x] 34-point automated attendance management test suite (`AttendanceManagementTest.java`)
-- [x] Total automated test suite: 173 passed, 0 failed
+- [x] 42-point automated defaulter management test suite (`DefaulterManagementTest.java`)
+- [x] Total automated test suite: 215 passed, 0 failed
 
 ## User Roles & Data Isolation Architecture
 
