@@ -16,7 +16,7 @@ A college attendance management system built with Core Java as a college Advance
 
 ## Current Stage
 
-**Stage 3.1 — Student Role & Student Account Linking**
+**Stage 4 — Dashboard & Role-Based Navigation**
 
 - [x] Maven project and JDBC connectivity (`college_attendance_db`)
 - [x] Hardened relational database schema (4 tables with PK, FK, CHECK, and UNIQUE constraints)
@@ -27,9 +27,17 @@ A college attendance management system built with Core Java as a college Advance
 - [x] Explicit `student_id` foreign key link between `users` and `students` table (`fk_users_student`)
 - [x] Account linkage validation enforcing that `STUDENT` users must link to a valid student record
 - [x] Thread-safe in-memory session management (`Session.java`) supporting `studentId`
-- [x] Modern, polished Swing Login Window (`LoginWindow.java`)
-- [x] Temporary authenticated verification window (`AuthenticatedPlaceholderWindow.java`) showing role and Student ID
-- [x] 15-point automated authentication and linkage test suite (`AuthenticationTest.java`)
+- [x] Modern, portfolio-inspired Swing Login Window (`LoginWindow.java`)
+- [x] Modern Application Shell (`MainWindow.java`) with responsive layout and `CardLayout` navigation
+- [x] Centralized Design System (`AppColors`, `AppFonts`, `RoundedPanel`, `SidebarNavButton`, `StatCard`, `Badge`)
+- [x] Non-bypassable authorization service (`AuthorizationService.java`) enforcing strict role permissions
+- [x] Administrator Dashboard (`AdminDashboardView.java`) with live counts for students, subjects, attendance, and defaulters
+- [x] Faculty Dashboard (`FacultyDashboardView.java`) with academic metrics and teaching quick actions
+- [x] Student Dashboard (`StudentDashboardView.java`) with profile banner, personal attendance %, defaulter warning (< 75.0%), and course breakdown
+- [x] Strict student data isolation anchored solely to `Session.getStudentId()`
+- [x] Polished module placeholders (`ModulePlaceholderView.java`) for subsequent development stages
+- [x] 15-point automated authentication test suite (`AuthenticationTest.java`)
+- [x] 57-point automated dashboard and authorization test suite (`DashboardAuthorizationTest.java`)
 
 ## User Roles & Data Isolation Architecture
 

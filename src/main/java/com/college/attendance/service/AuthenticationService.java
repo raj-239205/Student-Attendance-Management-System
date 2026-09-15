@@ -168,4 +168,11 @@ public class AuthenticationService {
         }
         Session.destroy();
     }
+
+    /**
+     * Retrieves the underlying database connection provider.
+     */
+    public DatabaseConnection getDbConnection() {
+        return dbConnection;
+    }
 }

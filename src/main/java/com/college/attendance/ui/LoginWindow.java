@@ -1,5 +1,6 @@
 package com.college.attendance.ui;
 
+import com.college.attendance.database.DatabaseConnection;
 import com.college.attendance.model.Session;
 import com.college.attendance.service.AuthenticationService;
 
@@ -49,6 +50,7 @@ public class LoginWindow extends JFrame {
     private static final Color COLOR_ERROR_TEXT = new Color(252, 165, 165);
 
     private final AuthenticationService authService;
+    private final DatabaseConnection dbConnection;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -59,7 +61,12 @@ public class LoginWindow extends JFrame {
     private boolean passwordVisible = false;
 
     public LoginWindow(AuthenticationService authService) {
+        this(authService, (authService != null) ? authService.getDbConnection() : null);
+    }
+
+    public LoginWindow(AuthenticationService authService, DatabaseConnection dbConnection) {
         this.authService = authService;
+        this.dbConnection = (dbConnection != null) ? dbConnection : (authService != null ? authService.getDbConnection() : null);
         initUI();
     }
 
@@ -248,7 +255,7 @@ public class LoginWindow extends JFrame {
     private void openAuthenticatedWindow(Session session) {
         dispose(); // Close login window
         SwingUtilities.invokeLater(() -> {
-            new AuthenticatedPlaceholderWindow(session, authService).setVisible(true);
+            new MainWindow(session, authService, dbConnection).setVisible(true);
         });
     }
 
