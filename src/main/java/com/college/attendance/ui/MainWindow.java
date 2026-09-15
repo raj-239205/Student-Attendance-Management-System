@@ -6,6 +6,7 @@ import com.college.attendance.model.User;
 import com.college.attendance.security.AuthorizationService;
 import com.college.attendance.service.AuthenticationService;
 import com.college.attendance.service.DashboardService;
+import com.college.attendance.service.StudentService;
 import com.college.attendance.ui.components.Badge;
 import com.college.attendance.ui.components.RoundedPanel;
 import com.college.attendance.ui.components.SidebarNavButton;
@@ -16,6 +17,7 @@ import com.college.attendance.ui.views.AdminDashboardView;
 import com.college.attendance.ui.views.FacultyDashboardView;
 import com.college.attendance.ui.views.ModulePlaceholderView;
 import com.college.attendance.ui.views.StudentDashboardView;
+import com.college.attendance.ui.views.StudentManagementView;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -54,6 +56,7 @@ public class MainWindow extends JFrame {
     private final DatabaseConnection dbConnection;
     private final AuthorizationService authorizationService;
     private final DashboardService dashboardService;
+    private final StudentService studentService;
 
     private CardLayout cardLayout;
     private JPanel contentContainer;
@@ -69,6 +72,7 @@ public class MainWindow extends JFrame {
         this.dbConnection = dbConnection;
         this.authorizationService = new AuthorizationService();
         this.dashboardService = new DashboardService(dbConnection);
+        this.studentService = new StudentService(dbConnection);
 
         initUI();
     }
@@ -255,11 +259,13 @@ public class MainWindow extends JFrame {
         }
         contentContainer.add(dashboardView, NavigationItem.DASHBOARD.name());
 
-        // Add placeholders for other modules
+        // Add placeholders and views for other modules
         for (NavigationItem item : NavigationItem.values()) {
             if (item != NavigationItem.DASHBOARD) {
-                // If student clicks MY_ATTENDANCE, display student dashboard
-                if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_ATTENDANCE) {
+                if (item == NavigationItem.STUDENTS) {
+                    // Full Student Management Module for authorized roles
+                    contentContainer.add(new StudentManagementView(studentService, session.getRole()), item.name());
+                } else if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_ATTENDANCE) {
                     contentContainer.add(new StudentDashboardView(dashboardService, session), item.name());
                 } else {
                     contentContainer.add(new ModulePlaceholderView(item), item.name());
