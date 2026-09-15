@@ -43,9 +43,13 @@ A college attendance management system built with Core Java as a college Advance
 students ──────< attendance >────── subjects
 ```
 
-- `attendance.student_id` → `students.id` (FK, ON DELETE RESTRICT)
-- `attendance.subject_id` → `subjects.id` (FK, ON DELETE RESTRICT)
-- Duplicate attendance for (student + subject + date) is prevented via UNIQUE constraint.
+### Hardened Constraints & Checks
+
+- **Role Check**: `users.role` ENUM restricted to `('ADMIN', 'FACULTY')` with explicit `chk_users_role` constraint.
+- **Timestamp Tracking**: `users` and `students` include `updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`.
+- **Semester Check**: `chk_students_semester` and `chk_subjects_semester` enforce `semester > 0`.
+- **Attendance Status Check**: `chk_attendance_status` strictly restricts `status` to `('PRESENT', 'ABSENT')`.
+- **Duplicate Prevention**: `uq_attendance_record` on `(student_id, subject_id, attendance_date)` strictly blocks duplicate entries.
 
 ### Attendance Percentage Formula
 
@@ -53,9 +57,17 @@ students ──────< attendance >────── subjects
 attendance_percentage = (PRESENT count / total classes) × 100
 ```
 
-**Default threshold:** A student is a **defaulter** when their attendance percentage falls below **75%**.
+**Default threshold:** A student is a **defaulter** when their attendance percentage falls below **75.0%** (`attendance_percentage < 75.0`).
+Students with exactly 75.0% attendance are **not** defaulters.
 
-The threshold is defined in `AppConstants.java` — not hard-coded across the codebase.
+The threshold is centralized in `AppConstants.DEFAULT_DEFAULTER_THRESHOLD = 75.0`.
+
+### Sample Data Seeding
+
+Sample data (`sample_data.sql`) is **not** executed automatically on startup to prevent unintended data duplication. It can be explicitly seeded when desired:
+```bash
+mvn exec:java -Dexec.args="--seed-sample-data"
+```
 
 ### SQL Validation Query
 

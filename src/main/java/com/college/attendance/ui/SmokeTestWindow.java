@@ -48,7 +48,7 @@ public final class SmokeTestWindow {
         panel.add(Box.createVerticalStrut(10));
 
         // Stage
-        JLabel stageLabel = new JLabel("Stage 2 \u2014 Database Design & Setup");
+        JLabel stageLabel = new JLabel("Stage 2.1 \u2014 Database Hardening & Final Validation");
         stageLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         stageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(stageLabel);

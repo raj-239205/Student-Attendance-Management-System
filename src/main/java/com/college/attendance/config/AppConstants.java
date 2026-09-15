@@ -1,4 +1,3 @@
-
 package com.college.attendance.config;
 
 /**
@@ -19,7 +18,12 @@ public final class AppConstants {
     /**
      * Minimum required attendance percentage.
      * A student is considered a defaulter when their attendance
-     * percentage falls below this value.
+     * percentage falls below this value (strictly less than 75%).
      */
-    public static final double DEFAULT_ATTENDANCE_THRESHOLD = 75.0;
+    public static final double DEFAULT_DEFAULTER_THRESHOLD = 75.0;
+
+    /**
+     * Alias for {@link #DEFAULT_DEFAULTER_THRESHOLD} for backwards compatibility.
+     */
+    public static final double DEFAULT_ATTENDANCE_THRESHOLD = DEFAULT_DEFAULTER_THRESHOLD;
 }

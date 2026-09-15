@@ -15,14 +15,16 @@ import java.util.logging.Logger;
  * Application entry point for the College Attendance Management System.
  *
  * <p>
- * Stage 2 behaviour:
+ * Stage 2.1 behaviour:
  * </p>
  * <ol>
  * <li>Loads database configuration from environment variables.</li>
  * <li>Tests the JDBC connection to MySQL.</li>
- * <li>Initializes the database schema (tables, indexes, constraints).</li>
- * <li>Validates the schema (FK, unique constraints, attendance
- * calculation).</li>
+ * <li>Initializes the hardened database schema (tables, constraints, indexes).</li>
+ * <li>Safely skips automatic sample data seeding unless explicitly requested via
+ *     {@code --seed-sample-data} or {@code -Dseed.sample.data=true}.</li>
+ * <li>Validates the schema (PKs, FKs, unique duplicate prevention, invalid status rejection,
+ *     and 75% defaulter boundary condition).</li>
  * <li>Opens the Swing smoke-test window with status information.</li>
  * </ol>
  */
@@ -36,7 +38,7 @@ public final class Main {
 
     public static void main(String[] args) {
         LOGGER.info("=== College Attendance Management System ===");
-        LOGGER.info("Stage 2 — Database Design & Setup");
+        LOGGER.info("Stage 2.1 — Database Hardening & Final Validation");
         LOGGER.info("");
 
         // 1. Load configuration
@@ -63,7 +65,7 @@ public final class Main {
         // 3. Initialize schema & validate
         boolean schemaValid = false;
         try (Connection conn = dbConnection.getConnection()) {
-            // Run schema.sql
+            // Run schema.sql (uses CREATE TABLE IF NOT EXISTS — safe to re-run)
             boolean schemaCreated = SchemaInitializer.runScript(conn, "/schema.sql");
             if (!schemaCreated) {
                 LOGGER.severe("Schema initialization failed.");
@@ -71,15 +73,33 @@ public final class Main {
                 return;
             }
 
-            // Load sample data (optional — uses INSERT IGNORE, safe to re-run)
-            SchemaInitializer.runScript(conn, "/sample_data.sql");
+            // Explicit sample data seeding check (prevents unexpected duplicate test data)
+            boolean shouldSeedSample = false;
+            if (args != null) {
+                for (String arg : args) {
+                    if ("--seed-sample-data".equalsIgnoreCase(arg)) {
+                        shouldSeedSample = true;
+                        break;
+                    }
+                }
+            }
+            if (Boolean.getBoolean("seed.sample.data")) {
+                shouldSeedSample = true;
+            }
 
-            // Validate schema
+            if (shouldSeedSample) {
+                LOGGER.info("Explicit sample data seeding requested — executing sample_data.sql...");
+                SchemaInitializer.runScript(conn, "/sample_data.sql");
+            } else {
+                LOGGER.info("Automatic sample data seeding SKIPPED (use --seed-sample-data to run sample_data.sql).");
+            }
+
+            // Validate hardened schema
             schemaValid = SchemaValidator.validate(conn);
 
             LOGGER.info("");
-            LOGGER.info("Default attendance threshold: "
-                    + AppConstants.DEFAULT_ATTENDANCE_THRESHOLD + "%");
+            LOGGER.info("Default defaulter threshold: "
+                    + AppConstants.DEFAULT_DEFAULTER_THRESHOLD + "%");
 
         } catch (SQLException e) {
             LOGGER.severe("Database error during schema setup: " + e.getMessage());

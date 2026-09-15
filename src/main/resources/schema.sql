@@ -1,5 +1,5 @@
 -- ============================================================
--- College Attendance Management System — Database Schema
+-- College Attendance Management System — Hardened Database Schema
 -- ============================================================
 -- Safe to run on initial setup.
 -- Uses CREATE TABLE IF NOT EXISTS — will not destroy existing data.
@@ -16,8 +16,10 @@ CREATE TABLE IF NOT EXISTS users (
     full_name   VARCHAR(100) NOT NULL,
     role        ENUM('ADMIN', 'FACULTY') NOT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_users_username UNIQUE (username)
+    CONSTRAINT uq_users_username UNIQUE (username),
+    CONSTRAINT chk_users_role CHECK (role IN ('ADMIN', 'FACULTY'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS students (
 
     CONSTRAINT uq_students_roll_no UNIQUE (roll_no),
     CONSTRAINT uq_students_email   UNIQUE (email),
+    CONSTRAINT chk_students_semester CHECK (semester > 0),
 
     INDEX idx_students_branch   (branch),
     INDEX idx_students_semester (semester),
@@ -55,6 +58,7 @@ CREATE TABLE IF NOT EXISTS subjects (
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT uq_subjects_code UNIQUE (subject_code),
+    CONSTRAINT chk_subjects_semester CHECK (semester > 0),
 
     INDEX idx_subjects_branch   (branch),
     INDEX idx_subjects_semester (semester)
@@ -73,6 +77,7 @@ CREATE TABLE IF NOT EXISTS attendance (
 
     -- Prevent duplicate attendance for same student + subject + date
     CONSTRAINT uq_attendance_record UNIQUE (student_id, subject_id, attendance_date),
+    CONSTRAINT chk_attendance_status CHECK (status IN ('PRESENT', 'ABSENT')),
 
     -- Foreign keys
     CONSTRAINT fk_attendance_student

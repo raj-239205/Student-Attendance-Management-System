@@ -14,6 +14,7 @@ public class User {
     private String fullName;
     private Role role;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     /** Supported user roles. */
     public enum Role {
@@ -78,6 +79,14 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     @Override
