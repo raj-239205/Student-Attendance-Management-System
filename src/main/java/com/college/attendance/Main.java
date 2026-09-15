@@ -1,35 +1,44 @@
 package com.college.attendance;
 
-import com.college.attendance.config.AppConstants;
 import com.college.attendance.config.DatabaseConfig;
 import com.college.attendance.database.DatabaseConnection;
 import com.college.attendance.database.SchemaInitializer;
 import com.college.attendance.database.SchemaValidator;
+import com.college.attendance.database.UserSeeder;
+import com.college.attendance.service.AuthenticationService;
+import com.college.attendance.ui.LoginWindow;
 import com.college.attendance.ui.SmokeTestWindow;
 
+import javax.swing.*;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Application entry point for the College Attendance Management System.
  *
  * <p>
- * Stage 2.1 behaviour:
+ * Standard application lifecycle (Stage 3):
  * </p>
  * <ol>
- * <li>Loads database configuration from environment variables.</li>
- * <li>Tests the JDBC connection to MySQL.</li>
- * <li>Initializes the hardened database schema (tables, constraints,
- * indexes).</li>
- * <li>Skips automatic sample data seeding. (Use --seed-sample-data or
- * -Dseed.sample.data=true to explicitly seed sample data.)</li>
- * <li>Validates the schema (PKs, FKs, unique duplicate prevention, invalid
- * status
- * rejection,
- * and 75% defaulter boundary condition).</li>
- * <li>Opens the Swing smoke-test window with status information.</li>
+ * <li>Load database configuration securely from environment variables /
+ * .env.</li>
+ * <li>Establish and verify database connectivity.</li>
+ * <li>Seed initial test users (admin / faculty) if the {@code users} table is
+ * empty.</li>
+ * <li>Launch the modern {@link LoginWindow} on the Swing Event Dispatch
+ * Thread.</li>
  * </ol>
+ *
+ * <p>
+ * Diagnostic / developer flags (optional):
+ * <ul>
+ * <li>{@code --validate-schema} : Runs automated schema validation.</li>
+ * <li>{@code --seed-sample-data} : Runs sample_data.sql for testing.</li>
+ * <li>{@code --smoke-test} : Displays the Stage 2.1 smoke-test window.</li>
+ * </ul>
+ * </p>
  */
 public final class Main {
 
@@ -41,78 +50,77 @@ public final class Main {
 
     public static void main(String[] args) {
         LOGGER.info("=== College Attendance Management System ===");
-        LOGGER.info("Stage 2.1 — Database Hardening & Final Validation");
+        LOGGER.info("Stage 3 — Authentication & Login System");
         LOGGER.info("");
 
-        // 1. Load configuration
+        // 1. Load database configuration
         DatabaseConfig config = new DatabaseConfig();
-        LOGGER.info("Database configuration loaded.");
+        LOGGER.info("Database configuration loaded: " + config);
 
         if (!config.isPasswordConfigured()) {
-            LOGGER.warning(
-                    "DB_PASSWORD environment variable is not set. "
-                            + "The connection will attempt with a null password. "
-                            + "Set DB_PASSWORD before running if your MySQL user requires a password.");
+            LOGGER.warning("DB_PASSWORD is not configured. Please set the DB_PASSWORD environment variable or .env file.");
         }
 
-        // 2. Test JDBC connection
+        // 2. Initialize connection
         DatabaseConnection dbConnection = new DatabaseConnection(config);
         boolean connected = dbConnection.testConnection();
 
         if (!connected) {
-            LOGGER.severe("Cannot proceed — database connection failed.");
-            new SmokeTestWindow(false, false).show();
-            return;
+            LOGGER.severe("Cannot connect to database. Starting LoginWindow in offline mode.");
         }
 
-        // 3. Initialize schema & validate
-        boolean schemaValid = false;
-        try (Connection conn = dbConnection.getConnection()) {
-            // Run schema.sql (uses CREATE TABLE IF NOT EXISTS — safe to re-run)
-            boolean schemaCreated = SchemaInitializer.runScript(conn, "/schema.sql");
-            if (!schemaCreated) {
-                LOGGER.severe("Schema initialization failed.");
-                new SmokeTestWindow(true, false).show();
-                return;
-            }
+        // 3. Handle optional development flags
+        boolean runSmokeTest = hasFlag(args, "--smoke-test");
+        boolean runValidation = hasFlag(args, "--validate-schema");
+        boolean runSampleSeed = hasFlag(args, "--seed-sample-data");
 
-            // Explicit sample data seeding check (prevents unexpected duplicate test data)
-            boolean shouldSeedSample = false;
-            if (args != null) {
-                for (String arg : args) {
-                    if ("--seed-sample-data".equalsIgnoreCase(arg)) {
-                        shouldSeedSample = true;
-                        break;
-                    }
+        if (connected) {
+            try (Connection conn = dbConnection.getConnection()) {
+                // Ensure default admin/faculty accounts exist for Stage 3 testing
+                // Uses the configured development password or fallback
+                String seedPassword = (config.getPassword() != null && !config.getPassword().isBlank())
+                        ? config.getPassword()
+                        : "AttendanceApp@2026";
+                UserSeeder.seedDefaultUsers(conn, seedPassword);
+
+                if (runSampleSeed) {
+                    LOGGER.info("Executing sample_data.sql as requested...");
+                    SchemaInitializer.runScript(conn, "/sample_data.sql");
                 }
+
+                if (runValidation) {
+                    LOGGER.info("Executing SchemaValidator as requested...");
+                    boolean valid = SchemaValidator.validate(conn);
+                    LOGGER.info("Schema Validation: " + (valid ? "PASSED" : "FAILED"));
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, "Database setup check encountered an error: " + e.getMessage());
             }
-            if (Boolean.getBoolean("seed.sample.data")) {
-                shouldSeedSample = true;
-            }
-
-            if (shouldSeedSample) {
-                LOGGER.info("Explicit sample data seeding requested — executing sample_data.sql...");
-                SchemaInitializer.runScript(conn, "/sample_data.sql");
-            } else {
-                LOGGER.info("Automatic sample data seeding SKIPPED (use --seed-sample-data to run sample_data.sql).");
-            }
-
-            // Validate hardened schema
-            schemaValid = SchemaValidator.validate(conn);
-
-            LOGGER.info("");
-            LOGGER.info("Default defaulter threshold: "
-                    + AppConstants.DEFAULT_DEFAULTER_THRESHOLD + "%");
-
-        } catch (SQLException e) {
-            LOGGER.severe("Database error during schema setup: " + e.getMessage());
         }
 
-        LOGGER.info("");
-        LOGGER.info("Result: Connection=" + connected + ", Schema=" + (schemaValid ? "VALID" : "INVALID"));
+        // 4. Launch UI
+        if (runSmokeTest) {
+            LOGGER.info("Launching SmokeTestWindow (requested via flag)...");
+            SwingUtilities.invokeLater(() -> new SmokeTestWindow(connected, true).show());
+        } else {
+            LOGGER.info("Launching LoginWindow...");
+            AuthenticationService authService = new AuthenticationService(dbConnection);
+            SwingUtilities.invokeLater(() -> {
+                LoginWindow loginWindow = new LoginWindow(authService);
+                loginWindow.setVisible(true);
+            });
+        }
+    }
 
-        // 4. Launch Swing smoke-test window
-        LOGGER.info("Launching Swing smoke-test window...");
-        new SmokeTestWindow(connected, schemaValid).show();
+    private static boolean hasFlag(String[] args, String flag) {
+        if (args == null) {
+            return false;
+        }
+        for (String arg : args) {
+            if (flag.equalsIgnoreCase(arg)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

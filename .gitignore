@@ -42,3 +42,4 @@ Thumbs.db
 .env
 *.env
 env.local
+local.properties

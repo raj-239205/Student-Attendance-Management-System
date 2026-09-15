@@ -1,34 +1,34 @@
-
 package com.college.attendance.config;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 /**
  * Holds database configuration values.
- * Reads from environment variables with sensible defaults for non-sensitive
- * settings.
  *
  * <p>
- * <b>Required environment variables for credentials:</b>
+ * Configuration resolution precedence:
+ * <ol>
+ * <li>Environment variable (e.g. {@code DB_USER}, {@code DB_PASSWORD})</li>
+ * <li>JVM System property (e.g. {@code -DDB_PASSWORD=...})</li>
+ * <li>Optional local configuration file ({@code .env} or
+ * {@code local.properties})</li>
+ * <li>Sensible defaults for host, port, db name, and user</li>
+ * </ol>
  * </p>
- * <ul>
- * <li>{@code DB_USER} — MySQL username (default: root)</li>
- * <li>{@code DB_PASSWORD} — MySQL password (no default; must be set)</li>
- * </ul>
  *
  * <p>
- * <b>Optional environment variables:</b>
+ * <b>Security:</b> Passwords are never logged or included in {@link #toString()}.
  * </p>
- * <ul>
- * <li>{@code DB_HOST} — default: localhost</li>
- * <li>{@code DB_PORT} — default: 3306</li>
- * <li>{@code DB_NAME} — default: college_attendance_db</li>
- * </ul>
  */
 public final class DatabaseConfig {
 
     private static final String DEFAULT_HOST = "localhost";
     private static final String DEFAULT_PORT = "3306";
     private static final String DEFAULT_DB_NAME = "college_attendance_db";
-    private static final String DEFAULT_USER = "root";
+    private static final String DEFAULT_USER = "attendance_app";
 
     private final String host;
     private final String port;
@@ -37,17 +37,38 @@ public final class DatabaseConfig {
     private final String password;
 
     public DatabaseConfig() {
-        this.host = getEnvOrDefault("DB_HOST", DEFAULT_HOST);
-        this.port = getEnvOrDefault("DB_PORT", DEFAULT_PORT);
-        this.databaseName = getEnvOrDefault("DB_NAME", DEFAULT_DB_NAME);
-        this.user = getEnvOrDefault("DB_USER", DEFAULT_USER);
-        this.password = getEnvOrDefault("DB_PASSWORD", null);
+        Properties localProps = loadLocalProperties();
+
+        this.host = resolveValue("DB_HOST", localProps, DEFAULT_HOST);
+        this.port = resolveValue("DB_PORT", localProps, DEFAULT_PORT);
+        this.databaseName = resolveValue("DB_NAME", localProps, DEFAULT_DB_NAME);
+        this.user = resolveValue("DB_USER", localProps, DEFAULT_USER);
+        this.password = resolveValue("DB_PASSWORD", localProps, null);
+    }
+
+    /**
+     * Parameterized constructor for custom testing or programmatic overrides.
+     */
+    public DatabaseConfig(String host, String port, String databaseName, String user, String password) {
+        this.host = (host != null && !host.isBlank()) ? host.trim() : DEFAULT_HOST;
+        this.port = (port != null && !port.isBlank()) ? port.trim() : DEFAULT_PORT;
+        this.databaseName = (databaseName != null && !databaseName.isBlank()) ? databaseName.trim() : DEFAULT_DB_NAME;
+        this.user = (user != null && !user.isBlank()) ? user.trim() : DEFAULT_USER;
+        this.password = (password != null && !password.isBlank()) ? password.trim() : null;
     }
 
     /** JDBC connection URL for the configured database. */
     public String getJdbcUrl() {
         return "jdbc:mysql://" + host + ":" + port + "/" + databaseName
                 + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public String getPort() {
+        return port;
     }
 
     public String getUser() {
@@ -70,8 +91,7 @@ public final class DatabaseConfig {
     }
 
     /**
-     * Returns a safe description of the config for logging.
-     * Never includes the password.
+     * Safe string representation for logs. Never includes the actual password.
      */
     @Override
     public String toString() {
@@ -84,11 +104,57 @@ public final class DatabaseConfig {
                 + '}';
     }
 
-    private static String getEnvOrDefault(String key, String defaultValue) {
-        String value = System.getenv(key);
-        if (value != null && !value.isBlank()) {
-            return value.trim();
+    private static String resolveValue(String key, Properties fileProps, String defaultValue) {
+        // 1. Environment variable
+        String val = System.getenv(key);
+        if (val != null && !val.isBlank()) {
+            return val.trim();
         }
+
+        // 2. System property (e.g. -DDB_PASSWORD=...)
+        val = System.getProperty(key);
+        if (val != null && !val.isBlank()) {
+            return val.trim();
+        }
+        val = System.getProperty(key.toLowerCase());
+        if (val != null && !val.isBlank()) {
+            return val.trim();
+        }
+
+        // 3. File properties (.env or local.properties)
+        if (fileProps != null) {
+            val = fileProps.getProperty(key);
+            if (val != null && !val.isBlank()) {
+                return val.trim();
+            }
+            val = fileProps.getProperty(key.toLowerCase());
+            if (val != null && !val.isBlank()) {
+                return val.trim();
+            }
+        }
+
         return defaultValue;
+    }
+
+    private static Properties loadLocalProperties() {
+        Properties props = new Properties();
+
+        // Check local.properties first, then .env
+        File[] candidateFiles = {
+                new File("local.properties"),
+                new File(".env")
+        };
+
+        for (File f : candidateFiles) {
+            if (f.exists() && f.isFile()) {
+                try (FileInputStream fis = new FileInputStream(f)) {
+                    props.load(fis);
+                    return props;
+                } catch (IOException ignored) {
+                    // Ignore file read error and continue
+                }
+            }
+        }
+        return props;
     }
 }

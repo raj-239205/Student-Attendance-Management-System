@@ -11,20 +11,42 @@ A college attendance management system built with Core Java as a college Advance
 | JDBC              | —        | Database connectivity     |
 | MySQL             | 8.4 LTS  | Database server           |
 | MySQL Connector/J | 8.4.0    | JDBC driver               |
+| jBCrypt           | 0.4      | Salted password hashing   |
 | Maven             | 3.9.x    | Build & dependency mgmt   |
 
 ## Current Stage
 
-**Stage 2 — Database Design & Setup**
+**Stage 3 — Authentication & Login System**
 
-- [x] Maven project created
-- [x] MySQL database configured (`college_attendance_db`)
-- [x] JDBC connection implemented with environment-variable-based config
-- [x] Database schema designed and created (4 tables)
-- [x] Foreign keys and unique constraints enforced
-- [x] Attendance percentage calculation validated
-- [x] Defaulter identification logic verified (75% threshold)
-- [x] Swing smoke-test window updated
+- [x] Maven project and JDBC connectivity (`college_attendance_db`)
+- [x] Hardened relational database schema (4 tables with PK, FK, CHECK, and UNIQUE constraints)
+- [x] Dedicated local MySQL application user (`attendance_app` with least-privilege grants)
+- [x] Salted BCrypt password hashing (`PasswordUtil.java`)
+- [x] User Data Access Object (`UserDAO.java`) with `PreparedStatement`
+- [x] Authentication service (`AuthenticationService.java`) with anti-enumeration protection
+- [x] Thread-safe in-memory session management (`Session.java`)
+- [x] Modern, polished Swing Login Window (`LoginWindow.java`)
+- [x] Temporary authenticated verification window (`AuthenticatedPlaceholderWindow.java`) with logout support
+- [x] 12-point automated authentication test suite (`AuthenticationTest.java`)
+
+## Authentication & Security Architecture
+
+### Credentials & Least Privilege
+The application connects via a dedicated non-root MySQL user:
+- **User**: `attendance_app`@`localhost`
+- **Privileges**: Strictly `SELECT`, `INSERT`, `UPDATE`, `DELETE` on `college_attendance_db.*` (no administrative or DDL privileges).
+
+### Password Hashing
+- Stored in `users.password` as standard 60-character BCrypt hashes (work factor = 12).
+- Plain-text passwords are never logged, never stored, and memory buffers (`char[]`) are immediately cleared.
+
+### Environment Variables & Local Config
+Database configuration is resolved in the following priority order:
+1. Environment variables: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+2. JVM System properties: `-DDB_USER=...`, `-DDB_PASSWORD=...`
+3. Local configuration file (`.env` or `local.properties`), which is strictly excluded from Git.
+
+See `.env.example` for a setup template. Never commit real credentials to Git.
 
 ## Database Design
 
