@@ -4,20 +4,22 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * A minimal Swing window that confirms Stage 1 setup is working.
- * This is NOT the final application UI — it exists only to verify
- * that Java Swing, JDBC, and MySQL all work together.
+ * A minimal Swing window that confirms setup status.
+ * Updated in Stage 2 to also show schema validation status.
+ * This is NOT the final application UI.
  */
 public final class SmokeTestWindow {
 
     private static final String TITLE = "College Attendance Management System";
     private static final int WINDOW_WIDTH = 520;
-    private static final int WINDOW_HEIGHT = 280;
+    private static final int WINDOW_HEIGHT = 320;
 
     private final boolean databaseConnected;
+    private final boolean schemaValid;
 
-    public SmokeTestWindow(boolean databaseConnected) {
+    public SmokeTestWindow(boolean databaseConnected, boolean schemaValid) {
         this.databaseConnected = databaseConnected;
+        this.schemaValid = schemaValid;
     }
 
     /** Creates and shows the smoke-test window on the Event Dispatch Thread. */
@@ -34,7 +36,7 @@ public final class SmokeTestWindow {
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+        panel.setBorder(BorderFactory.createEmptyBorder(25, 40, 25, 40));
         panel.setBackground(new Color(245, 245, 250));
 
         // Title
@@ -43,30 +45,31 @@ public final class SmokeTestWindow {
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(titleLabel);
 
-        panel.add(Box.createVerticalStrut(12));
+        panel.add(Box.createVerticalStrut(10));
 
         // Stage
-        JLabel stageLabel = new JLabel("Stage 1 \u2014 Setup Verification");
+        JLabel stageLabel = new JLabel("Stage 2 \u2014 Database Design & Setup");
         stageLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         stageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(stageLabel);
 
-        panel.add(Box.createVerticalStrut(20));
+        panel.add(Box.createVerticalStrut(18));
 
         // Status rows
         addStatusRow(panel, "Java:", System.getProperty("java.version"));
         addStatusRow(panel, "Swing:", "OK");
+        addStatusRow(panel, "Database:", statusText(databaseConnected));
+        addStatusRow(panel, "Schema:", statusText(schemaValid));
+        addStatusRow(panel, "Tables:", "users, students, subjects, attendance");
 
-        String dbStatus = databaseConnected ? "Connected" : "NOT Connected";
-        addStatusRow(panel, "Database:", dbStatus);
-
-        panel.add(Box.createVerticalStrut(20));
+        panel.add(Box.createVerticalStrut(18));
 
         // Overall result
-        String resultText = databaseConnected
-                ? "\u2714  Stage 1 Setup Successful"
-                : "\u2718  Database connection failed \u2014 check configuration";
-        Color resultColor = databaseConnected
+        boolean allGood = databaseConnected && schemaValid;
+        String resultText = allGood
+                ? "\u2714  Stage 2 Setup Successful"
+                : "\u2718  Setup incomplete \u2014 check console output";
+        Color resultColor = allGood
                 ? new Color(34, 139, 34)
                 : new Color(178, 34, 34);
 
@@ -78,6 +81,10 @@ public final class SmokeTestWindow {
 
         frame.setContentPane(panel);
         frame.setVisible(true);
+    }
+
+    private static String statusText(boolean ok) {
+        return ok ? "OK" : "FAILED";
     }
 
     private static void addStatusRow(JPanel parent, String label, String value) {

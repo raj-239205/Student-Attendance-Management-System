@@ -1,20 +1,26 @@
+
 package com.college.attendance.config;
 
 /**
  * Holds database configuration values.
- * Reads from environment variables with sensible defaults for non-sensitive settings.
+ * Reads from environment variables with sensible defaults for non-sensitive
+ * settings.
  *
- * <p><b>Required environment variables for credentials:</b></p>
+ * <p>
+ * <b>Required environment variables for credentials:</b>
+ * </p>
  * <ul>
- *   <li>{@code DB_USER}     — MySQL username  (default: root)</li>
- *   <li>{@code DB_PASSWORD} — MySQL password  (no default; must be set)</li>
+ * <li>{@code DB_USER} — MySQL username (default: root)</li>
+ * <li>{@code DB_PASSWORD} — MySQL password (no default; must be set)</li>
  * </ul>
  *
- * <p><b>Optional environment variables:</b></p>
+ * <p>
+ * <b>Optional environment variables:</b>
+ * </p>
  * <ul>
- *   <li>{@code DB_HOST} — default: localhost</li>
- *   <li>{@code DB_PORT} — default: 3306</li>
- *   <li>{@code DB_NAME} — default: college_attendance_db</li>
+ * <li>{@code DB_HOST} — default: localhost</li>
+ * <li>{@code DB_PORT} — default: 3306</li>
+ * <li>{@code DB_NAME} — default: college_attendance_db</li>
  * </ul>
  */
 public final class DatabaseConfig {
@@ -56,7 +62,9 @@ public final class DatabaseConfig {
         return databaseName;
     }
 
-    /** Returns true if the password has been configured (non-null and non-blank). */
+    /**
+     * Returns true if the password has been configured (non-null and non-blank).
+     */
     public boolean isPasswordConfigured() {
         return password != null && !password.isBlank();
     }
