@@ -6,6 +6,7 @@ import com.college.attendance.model.User;
 import com.college.attendance.security.AuthorizationService;
 import com.college.attendance.service.AuthenticationService;
 import com.college.attendance.service.DashboardService;
+import com.college.attendance.service.AttendanceService;
 import com.college.attendance.service.StudentService;
 import com.college.attendance.service.SubjectService;
 import com.college.attendance.ui.components.Badge;
@@ -15,8 +16,10 @@ import com.college.attendance.ui.navigation.NavigationItem;
 import com.college.attendance.ui.theme.AppColors;
 import com.college.attendance.ui.theme.AppFonts;
 import com.college.attendance.ui.views.AdminDashboardView;
+import com.college.attendance.ui.views.AttendanceManagementView;
 import com.college.attendance.ui.views.FacultyDashboardView;
 import com.college.attendance.ui.views.ModulePlaceholderView;
+import com.college.attendance.ui.views.StudentAttendanceView;
 import com.college.attendance.ui.views.StudentDashboardView;
 import com.college.attendance.ui.views.StudentManagementView;
 import com.college.attendance.ui.views.SubjectManagementView;
@@ -60,6 +63,7 @@ public class MainWindow extends JFrame {
     private final DashboardService dashboardService;
     private final StudentService studentService;
     private final SubjectService subjectService;
+    private final AttendanceService attendanceService;
 
     private CardLayout cardLayout;
     private JPanel contentContainer;
@@ -77,6 +81,7 @@ public class MainWindow extends JFrame {
         this.dashboardService = new DashboardService(dbConnection);
         this.studentService = new StudentService(dbConnection);
         this.subjectService = new SubjectService(dbConnection);
+        this.attendanceService = new AttendanceService(dbConnection);
 
         initUI();
     }
@@ -272,8 +277,12 @@ public class MainWindow extends JFrame {
                 } else if (item == NavigationItem.SUBJECTS) {
                     // Full Subject Management Module for authorized roles (ADMIN full CRUD, FACULTY read-only)
                     contentContainer.add(new SubjectManagementView(subjectService, session.getRole()), item.name());
+                } else if (item == NavigationItem.ATTENDANCE) {
+                    // Full Attendance Management Module for ADMIN and FACULTY
+                    contentContainer.add(new AttendanceManagementView(attendanceService, subjectService, session.getRole()), item.name());
                 } else if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_ATTENDANCE) {
-                    contentContainer.add(new StudentDashboardView(dashboardService, session), item.name());
+                    // Dedicated student attendance inspection view
+                    contentContainer.add(new StudentAttendanceView(attendanceService, session), item.name());
                 } else {
                     contentContainer.add(new ModulePlaceholderView(item), item.name());
                 }

@@ -16,7 +16,7 @@ A college attendance management system built with Core Java as a college Advance
 
 ## Current Stage
 
-**Stage 6 — Subject Management Module**
+**Stage 7 — Attendance Management Module**
 
 - [x] Maven project and JDBC connectivity (`college_attendance_db`)
 - [x] Hardened relational database schema (4 tables with PK, FK, CHECK, and UNIQUE constraints)
@@ -46,14 +46,20 @@ A college attendance management system built with Core Java as a college Advance
 - [x] Subject Table Model (`SubjectTableModel.java`) with custom dark table renderers
 - [x] Modal Course Add & Edit Dialog (`SubjectFormDialog.java`) with inline validation error banners
 - [x] Read-Only Course Inspection Dialog (`SubjectDetailsDialog.java`)
-- [x] Role-Guarded Controls: ADMIN full CRUD; FACULTY "Academic View Mode (Read-Only)"; STUDENT strictly denied
-- [x] Foreign-key referential integrity protection against deleting subjects referenced by attendance records
-- [x] Asynchronous SwingWorker concurrency preventing Swing EDT freezing on database operations
+- [x] Complete Attendance Management Module (`AttendanceManagementView.java`) with two cards: "Mark Attendance" & "Attendance History"
+- [x] Attendance Data Access Object (`AttendanceDAO.java`) supporting transactional batch execution, duplicate upserts, and filtered history queries
+- [x] Attendance Business & Security Service (`AttendanceService.java`) managing transaction boundaries, validations, student isolation, and percentage math
+- [x] Interactive Marking Table Model (`AttendanceMarkingTableModel.java`) supporting bulk actions ("Mark All Present", "Mark All Absent") and per-row toggling
+- [x] History Log Table Model (`AttendanceTableModel.java`) displaying joined student, course, and status badges
+- [x] Dedicated Student Attendance View (`StudentAttendanceView.java`) for `NavigationItem.MY_ATTENDANCE` strictly bound to `Session.getStudentId()`
+- [x] Automatic duplicate prevention via database unique constraint (`uq_attendance_record`) and graceful re-marking support
+- [x] Role-Guarded Controls: ADMIN (full management & delete), FACULTY (marking & updates), STUDENT (read-only personal access)
 - [x] 15-point automated authentication test suite (`AuthenticationTest.java`)
 - [x] 57-point automated dashboard and authorization test suite (`DashboardAuthorizationTest.java`)
 - [x] 33-point automated student management test suite (`StudentManagementTest.java`)
 - [x] 34-point automated subject management test suite (`SubjectManagementTest.java`)
-- [x] Total automated test suite: 139 passed, 0 failed
+- [x] 34-point automated attendance management test suite (`AttendanceManagementTest.java`)
+- [x] Total automated test suite: 173 passed, 0 failed
 
 ## User Roles & Data Isolation Architecture
 
