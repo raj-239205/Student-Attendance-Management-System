@@ -42,20 +42,20 @@ public class AuthenticationTest {
         DatabaseConfig config = new DatabaseConfig();
         DatabaseConnection dbConnection = new DatabaseConnection(config);
 
+        String testPass = config.getPassword();
+        if (testPass == null || testPass.isBlank()) {
+            throw new IllegalStateException("Database password not configured for test suite.");
+        }
+
         // Ensure test users exist in DB
         try (Connection conn = dbConnection.getConnection()) {
-            String testPass = (config.getPassword() != null && !config.getPassword().isBlank())
-                    ? config.getPassword()
-                    : "AttendanceApp@2026";
             UserSeeder.seedDefaultUsers(conn, testPass);
         } catch (Exception e) {
             System.err.println("Warning: Could not seed test users for suite: " + e.getMessage());
         }
 
         AuthenticationService authService = new AuthenticationService(dbConnection);
-        String validPassword = (config.getPassword() != null && !config.getPassword().isBlank())
-                ? config.getPassword()
-                : "AttendanceApp@2026";
+        String validPassword = testPass;
 
         // 1. Test BCrypt password hashing
         test("1. BCrypt password hashing produces valid 60-char hash", () -> {

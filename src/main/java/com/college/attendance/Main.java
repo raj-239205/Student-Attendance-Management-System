@@ -76,12 +76,11 @@ public final class Main {
 
         if (connected) {
             try (Connection conn = dbConnection.getConnection()) {
-                // Ensure default admin/faculty accounts exist for Stage 3 testing
-                // Uses the configured development password or fallback
-                String seedPassword = (config.getPassword() != null && !config.getPassword().isBlank())
-                        ? config.getPassword()
-                        : "AttendanceApp@2026";
-                UserSeeder.seedDefaultUsers(conn, seedPassword);
+                // Seed default admin/faculty test accounts if configured and not yet present
+                String seedPassword = config.getPassword();
+                if (seedPassword != null && !seedPassword.isBlank()) {
+                    UserSeeder.seedDefaultUsers(conn, seedPassword);
+                }
 
                 if (runSampleSeed) {
                     LOGGER.info("Executing sample_data.sql as requested...");
