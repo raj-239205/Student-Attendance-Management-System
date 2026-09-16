@@ -70,7 +70,9 @@ A college attendance management system built with Core Java as a college Advance
 - [x] Table Models: `StudentReportTableModel`, `SubjectReportTableModel`, `TrendReportTableModel`
 - [x] RFC 4180 Compliant CSV Export Utility (`CsvExportUtil.java`) with destination file dialog selection
 - [x] Stage 10 System-wide Polish & Hardening: date normalization, threshold clamping [0.0, 100.0], destructive action confirmation, empty-dataset resilience
-- [x] Master automated test runner (`AllTestsSuite.java`) executing all 8 regression suites with 100% pass rate
+- [x] **Realistic Demonstration Dataset (`DemoDataSeeder.java`)**: 60 students, 16 faculty, 8 subjects, and 4,919 attendance records across 21 weekdays in September 2026
+- [x] Realistic Attendance Distribution: Safe (66.7%), Defaulters (28.3%), No Data (5.0%) with deterministic boundary test cases (100%, 90%, 75.00%, 71.43%, 60.00%, NO_DATA)
+- [x] Master automated test runner (`AllTestsSuite.java`) executing all 9 regression suites with 100% pass rate
 - [x] 15-point automated authentication test suite (`AuthenticationTest.java`)
 - [x] 57-point automated dashboard and authorization test suite (`DashboardAuthorizationTest.java`)
 - [x] 33-point automated student management test suite (`StudentManagementTest.java`)
@@ -79,7 +81,8 @@ A college attendance management system built with Core Java as a college Advance
 - [x] 42-point automated defaulter management test suite (`DefaulterManagementTest.java`)
 - [x] 67-point automated reports and analytics test suite (`ReportsAnalyticsTest.java`)
 - [x] 62-point automated final polish and integration test suite (`Stage10SystemPolishTest.java`)
-- [x] Total automated test suite: 344 passed, 0 failed (100% pass rate)
+- [x] 37-point automated demo dataset verification test suite (`DemoDatasetVerificationTest.java`)
+- [x] Total automated regression test suite: 381 passed, 0 failed (100% pass rate)
 
 ## User Roles & Data Isolation Architecture
 
@@ -146,12 +149,39 @@ Students with exactly 75.0% attendance are **not** defaulters.
 
 The threshold is centralized in `AppConstants.DEFAULT_DEFAULTER_THRESHOLD = 75.0`.
 
-### Sample Data Seeding
+### Sample & Demo Data Seeding
 
-Sample data (`sample_data.sql`) is **not** executed automatically on startup to prevent unintended data duplication. It can be explicitly seeded when desired:
-```bash
-mvn exec:java -Dexec.args="--seed-sample-data"
-```
+The application includes two seeding utilities:
+
+1. **Realistic Demonstration Dataset (Recommended for Demo & Evaluation)**:
+   Populates the database with 60 students (`CS2024001`–`CS2024060`), 15 faculty accounts, 8 subjects, and 4,904 deterministic attendance records across September 2026:
+   ```bash
+   mvn exec:java -Dexec.args="--seed-demo-data"
+   ```
+   This operation is **fully idempotent and transaction-safe**; running it multiple times will not duplicate records.
+
+2. **Basic Sample Data**:
+   Seeds a small testing dataset (3 students, 2 subjects, 15 attendance records):
+   ```bash
+   mvn exec:java -Dexec.args="--seed-sample-data"
+   ```
+
+### Demo User Accounts (Pre-configured Credentials)
+
+All passwords use salted BCrypt hashing (work factor = 12).
+
+| Role | Username | Password | Linked Student / Purpose | Attendance Status |
+|------|----------|----------|--------------------------|-------------------|
+| **ADMIN** | `admin` | `admin123` | System Administrator (Full Access) | N/A |
+| **FACULTY** | `faculty` | `faculty123` | Dr. Rajesh Kumar (Faculty) | N/A |
+| **FACULTY** | `prof.asharma` | `faculty123` | Prof. Aarav Sharma (Data Structures) | N/A |
+| **FACULTY** | `prof.averma` | `faculty123` | Prof. Ananya Verma (OOP Java) | N/A |
+| **FACULTY** | `prof.rmehta` | `faculty123` | Prof. Rohit Mehta (DBMS) | N/A |
+| **STUDENT** | `student` | `student123` | Aarav Sharma (`CS2024001`) | **80.0% (SAFE)** |
+| **STUDENT** | `priya.student` | `student123` | Priya Patel (`CS2024002`) | **40.0% (DEFAULTER)** |
+| **STUDENT** | `rahul.student` | `student123` | Rahul Verma (`CS2024003`) | **75.0% (SAFE — Exactly on boundary)** |
+| **STUDENT** | `ananya.student` | `student123` | Ananya Singh (`CS2024004`) | **100.0% (SAFE)** |
+| **STUDENT** | `rohit.student` | `student123` | Rohit Gupta (`CS2024007`) | **71.4% (DEFAULTER — Below boundary)** |
 
 ### SQL Validation Query
 

@@ -52,12 +52,16 @@ public class AllTestsSuite {
             ReportsAnalyticsTest.main(args);
 
             // 8. Stage 10 Final Polish & System Verification
-            System.out.println("\n>>> [8/8] Running Stage 10 System Polish & Integration Suite...");
+            System.out.println("\n>>> [8/9] Running Stage 10 System Polish & Integration Suite...");
             Stage10SystemPolishTest.main(args);
+
+            // 9. Realistic Demonstration Dataset Verification
+            System.out.println("\n>>> [9/9] Running Demo Dataset Verification Suite...");
+            DemoDatasetVerificationTest.main(args);
 
             long elapsed = System.currentTimeMillis() - startTime;
             System.out.println("\n================================================================================");
-            System.out.println("  ALL SUITES (STAGES 1–10) COMPLETED SUCCESSFULLY IN " + elapsed + " ms  ");
+            System.out.println("  ALL SUITES (STAGES 1–10 + DEMO DATASET) COMPLETED SUCCESSFULLY IN " + elapsed + " ms  ");
             System.out.println("  100% PASS RATE — ZERO FAILURES — ZERO ERRORS                                  ");
             System.out.println("================================================================================");
 

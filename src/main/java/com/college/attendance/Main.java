@@ -2,6 +2,7 @@ package com.college.attendance;
 
 import com.college.attendance.config.DatabaseConfig;
 import com.college.attendance.database.DatabaseConnection;
+import com.college.attendance.database.DemoDataSeeder;
 import com.college.attendance.database.SchemaInitializer;
 import com.college.attendance.database.SchemaValidator;
 import com.college.attendance.database.UserSeeder;
@@ -73,6 +74,7 @@ public final class Main {
         boolean runSmokeTest = hasFlag(args, "--smoke-test");
         boolean runValidation = hasFlag(args, "--validate-schema");
         boolean runSampleSeed = hasFlag(args, "--seed-sample-data");
+        boolean runDemoSeed = hasFlag(args, "--seed-demo-data");
 
         if (connected) {
             try (Connection conn = dbConnection.getConnection()) {
@@ -80,11 +82,18 @@ public final class Main {
                 String seedPassword = config.getPassword();
                 if (seedPassword != null && !seedPassword.isBlank()) {
                     UserSeeder.seedDefaultUsers(conn, seedPassword);
+                    // Populate realistic demonstration dataset for evaluator presentation
+                    DemoDataSeeder.seedDemoData(conn, seedPassword);
                 }
 
                 if (runSampleSeed) {
                     LOGGER.info("Executing sample_data.sql as requested...");
                     SchemaInitializer.runScript(conn, "/sample_data.sql");
+                }
+
+                if (runDemoSeed) {
+                    LOGGER.info("Explicitly executing DemoDataSeeder as requested via flag...");
+                    DemoDataSeeder.seedDemoData(conn, (seedPassword != null) ? seedPassword : "Admin@123");
                 }
 
                 if (runValidation) {
