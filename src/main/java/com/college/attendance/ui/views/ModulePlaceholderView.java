@@ -54,7 +54,7 @@ public class ModulePlaceholderView extends JPanel {
         RoundedPanel noticePill = new RoundedPanel(12, new java.awt.Color(30, 58, 138, 100), AppColors.PRIMARY);
         noticePill.setBorder(new EmptyBorder(8, 16, 8, 16));
         noticePill.setMaximumSize(new Dimension(420, 36));
-        JLabel noticeLabel = new JLabel("⚡ Module scheduled for implementation in the next development stage");
+        JLabel noticeLabel = new JLabel("⚡ System Module — Reference and Documentation View");
         noticeLabel.setFont(AppFonts.BADGE);
         noticeLabel.setForeground(AppColors.INFO);
         noticePill.add(noticeLabel);

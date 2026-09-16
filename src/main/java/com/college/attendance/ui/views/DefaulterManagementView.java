@@ -396,6 +396,8 @@ public class DefaulterManagementView extends JPanel {
         double thresh;
         try {
             thresh = Double.parseDouble(thresholdField.getText().trim());
+            thresh = Math.max(0.0, Math.min(100.0, thresh));
+            thresholdField.setText(String.format("%.1f", thresh));
         } catch (NumberFormatException e) {
             thresh = AppConstants.DEFAULT_DEFAULTER_THRESHOLD;
             thresholdField.setText(String.valueOf(AppConstants.DEFAULT_DEFAULTER_THRESHOLD));

@@ -25,6 +25,7 @@ import com.college.attendance.ui.views.DefaulterManagementView;
 import com.college.attendance.ui.views.ReportsAnalyticsView;
 import com.college.attendance.ui.views.StudentAttendanceView;
 import com.college.attendance.ui.views.StudentDashboardView;
+import com.college.attendance.ui.views.StudentProfileView;
 import com.college.attendance.ui.views.StudentManagementView;
 import com.college.attendance.ui.views.SubjectManagementView;
 
@@ -297,6 +298,9 @@ public class MainWindow extends JFrame {
                 } else if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_ATTENDANCE) {
                     // Dedicated student attendance inspection view
                     contentContainer.add(new StudentAttendanceView(attendanceService, session), item.name());
+                } else if (session.getRole() == User.Role.STUDENT && item == NavigationItem.MY_PROFILE) {
+                    // Dedicated student enrollment profile view
+                    contentContainer.add(new StudentProfileView(studentService, session), item.name());
                 } else {
                     contentContainer.add(new ModulePlaceholderView(item), item.name());
                 }

@@ -2,6 +2,7 @@ package com.college.attendance.service;
 
 import com.college.attendance.dao.StudentDAO;
 import com.college.attendance.database.DatabaseConnection;
+import com.college.attendance.model.Session;
 import com.college.attendance.model.Student;
 import com.college.attendance.model.User;
 
@@ -123,6 +124,26 @@ public class StudentService {
             return studentDAO.getStudentById(conn, studentId);
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to fetch student by ID: {0}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves the student profile strictly for the authenticated student session.
+     * Prevents any arbitrary student ID parameter injection.
+     *
+     * @param session the active student session
+     * @return the Student record if found, or null
+     */
+    public Student getOwnProfile(Session session) {
+        if (session == null || session.getRole() != User.Role.STUDENT || session.getStudentId() == null) {
+            LOGGER.warning("Blocked invalid profile access: caller is not a valid authenticated student.");
+            return null;
+        }
+        try (Connection conn = dbConnection.getConnection()) {
+            return studentDAO.getStudentById(conn, session.getStudentId());
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to fetch student own profile: {0}", e.getMessage());
             return null;
         }
     }

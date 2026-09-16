@@ -491,12 +491,26 @@ public class ReportsAnalyticsView extends JPanel {
             statusFilter = null;
         }
 
-        LocalDate startDate = parseDate(startDateField.getText().trim());
-        LocalDate endDate = parseDate(endDateField.getText().trim());
+        String startText = startDateField.getText().trim();
+        String endText = endDateField.getText().trim();
+        boolean hasStartInput = !startText.isEmpty() && !"YYYY-MM-DD".equalsIgnoreCase(startText);
+        boolean hasEndInput = !endText.isEmpty() && !"YYYY-MM-DD".equalsIgnoreCase(endText);
+
+        LocalDate startDate = parseDate(startText);
+        LocalDate endDate = parseDate(endText);
+
+        if ((hasStartInput && startDate == null) || (hasEndInput && endDate == null)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid date format in From/To fields. Please use YYYY-MM-DD format (e.g. 2026-09-01).",
+                    "Invalid Date Filter", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
         double thresh;
         try {
             thresh = Double.parseDouble(thresholdField.getText().trim());
+            thresh = Math.max(0.0, Math.min(100.0, thresh));
+            thresholdField.setText(String.format("%.1f", thresh));
         } catch (NumberFormatException e) {
             thresh = AppConstants.DEFAULT_DEFAULTER_THRESHOLD;
             thresholdField.setText(String.valueOf(AppConstants.DEFAULT_DEFAULTER_THRESHOLD));

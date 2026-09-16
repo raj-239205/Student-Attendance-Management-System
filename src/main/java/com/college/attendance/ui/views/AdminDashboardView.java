@@ -118,7 +118,7 @@ public class AdminDashboardView extends JPanel {
     private JPanel createLowerSection() {
         JPanel lower = new JPanel(new GridLayout(1, 2, 20, 0));
         lower.setOpaque(false);
-        lower.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
+        lower.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
 
         // Quick Actions Card
         RoundedPanel actionsCard = new RoundedPanel(16, AppColors.BG_CARD, AppColors.BORDER_CARD);
@@ -131,13 +131,15 @@ public class AdminDashboardView extends JPanel {
         actionsCard.add(actionsTitle);
         actionsCard.add(Box.createVerticalStrut(14));
 
-        JPanel buttonsPanel = new JPanel(new GridLayout(2, 2, 12, 12));
+        JPanel buttonsPanel = new JPanel(new GridLayout(3, 2, 12, 10));
         buttonsPanel.setOpaque(false);
 
         buttonsPanel.add(createActionButton("👥 Students Directory", () -> navigationHandler.accept(NavigationItem.STUDENTS)));
         buttonsPanel.add(createActionButton("📚 Course Catalog", () -> navigationHandler.accept(NavigationItem.SUBJECTS)));
         buttonsPanel.add(createActionButton("📅 Attendance Records", () -> navigationHandler.accept(NavigationItem.ATTENDANCE)));
         buttonsPanel.add(createActionButton("⚠️ Defaulter Watchlist", () -> navigationHandler.accept(NavigationItem.DEFAULTERS)));
+        buttonsPanel.add(createActionButton("📊 Reports & Analytics", () -> navigationHandler.accept(NavigationItem.REPORTS)));
+        buttonsPanel.add(createActionButton("🔄 Refresh Metrics", this::loadMetricsAsync));
 
         actionsCard.add(buttonsPanel);
 
