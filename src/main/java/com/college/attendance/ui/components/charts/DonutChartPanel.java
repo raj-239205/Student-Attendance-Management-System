@@ -25,14 +25,24 @@ public class DonutChartPanel extends RoundedPanel {
 
     private AttendanceDistribution distribution;
     private String title = "Status Distribution";
+    private Color presentColor = AppColors.SUCCESS;
+    private Color absentColor = AppColors.DANGER;
+    private String centerSubtitle = "ATTENDED";
 
     public DonutChartPanel() {
         this(AttendanceDistribution.empty());
     }
 
     public DonutChartPanel(AttendanceDistribution distribution) {
+        this(distribution, AppColors.SUCCESS, AppColors.DANGER, "ATTENDED");
+    }
+
+    public DonutChartPanel(AttendanceDistribution distribution, Color presentColor, Color absentColor, String centerSubtitle) {
         super(16, AppColors.BG_CARD, AppColors.BORDER_CARD);
         this.distribution = (distribution != null) ? distribution : AttendanceDistribution.empty();
+        this.presentColor = (presentColor != null) ? presentColor : AppColors.SUCCESS;
+        this.absentColor = (absentColor != null) ? absentColor : AppColors.DANGER;
+        this.centerSubtitle = (centerSubtitle != null) ? centerSubtitle : "ATTENDED";
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(16, 16, 16, 16));
         setPreferredSize(new Dimension(320, 260));
@@ -49,6 +59,17 @@ public class DonutChartPanel extends RoundedPanel {
         repaint();
     }
 
+    public void setColors(Color presentColor, Color absentColor) {
+        this.presentColor = (presentColor != null) ? presentColor : this.presentColor;
+        this.absentColor = (absentColor != null) ? absentColor : this.absentColor;
+        repaint();
+    }
+
+    public void setCenterSubtitle(String centerSubtitle) {
+        this.centerSubtitle = (centerSubtitle != null) ? centerSubtitle : this.centerSubtitle;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -60,28 +81,35 @@ public class DonutChartPanel extends RoundedPanel {
         int h = getHeight();
 
         // 1. Title
-        g2.setFont(AppFonts.SUBTITLE);
-        g2.setColor(AppColors.TEXT_PRIMARY);
-        g2.drawString(title, 20, 28);
+        g2.setFont(AppFonts.BADGE);
+        g2.setColor(AppColors.TEXT_MUTED);
+        g2.drawString(title.toUpperCase(), 20, 26);
 
         int total = distribution.getTotalCount();
         if (total <= 0) {
-            g2.setFont(AppFonts.BODY);
+            g2.setFont(AppFonts.BADGE);
             g2.setColor(AppColors.TEXT_MUTED);
-            String emptyMsg = "No attendance data available.";
+            String emptyTitle = "NO ATTENDANCE DATA";
+            FontMetrics fmTitle = g2.getFontMetrics();
+            g2.drawString(emptyTitle, (w - fmTitle.stringWidth(emptyTitle)) / 2, h / 2 - 2);
+
+            g2.setFont(AppFonts.BODY);
+            g2.setColor(AppColors.TEXT_SUBDUED);
+            String emptyMsg = "No attendance records are available yet.";
             FontMetrics fm = g2.getFontMetrics();
             int msgX = (w - fm.stringWidth(emptyMsg)) / 2;
-            int msgY = h / 2 + 10;
+            int msgY = h / 2 + 18;
             g2.drawString(emptyMsg, msgX, msgY);
             g2.dispose();
             return;
         }
 
         // 2. Geometry for Donut
-        int diameter = Math.min(w - 140, h - 80);
-        if (diameter < 100) diameter = 100;
-        int cx = (w - 120) / 2 + 10;
-        int cy = h / 2 + 10;
+        int diameter = Math.min(w - 150, h - 70);
+        if (diameter < 110) diameter = 110;
+        if (diameter > 190) diameter = 190;
+        int cx = (w - 140) / 2 + 10;
+        int cy = h / 2 + 12;
         int x = cx - diameter / 2;
         int y = cy - diameter / 2;
 
@@ -92,15 +120,15 @@ public class DonutChartPanel extends RoundedPanel {
         double absentAngle = 360.0 - presentAngle;
 
         // Draw Present Arc
-        g2.setColor(AppColors.SUCCESS);
+        g2.setColor(presentColor);
         g2.fill(new Arc2D.Double(x, y, diameter, diameter, 90, -presentAngle, Arc2D.PIE));
 
         // Draw Absent Arc
-        g2.setColor(AppColors.DANGER);
+        g2.setColor(absentColor);
         g2.fill(new Arc2D.Double(x, y, diameter, diameter, 90 - presentAngle, -absentAngle, Arc2D.PIE));
 
         // Cut out center to form a donut
-        int holeDiameter = (int) (diameter * 0.62);
+        int holeDiameter = (int) (diameter * 0.64);
         int hx = cx - holeDiameter / 2;
         int hy = cy - holeDiameter / 2;
         g2.setColor(AppColors.BG_CARD);
@@ -111,40 +139,39 @@ public class DonutChartPanel extends RoundedPanel {
         g2.setStroke(new BasicStroke(1.5f));
         g2.draw(new Ellipse2D.Double(hx, hy, holeDiameter, holeDiameter));
 
-        // Center Text: Present percentage and total
-        g2.setFont(AppFonts.SUBTITLE);
+        // Center Text: Present percentage and subtitle
+        g2.setFont(AppFonts.PAGE_TITLE);
         g2.setColor(AppColors.TEXT_PRIMARY);
         String centerPct = String.format("%.1f%%", presentPct);
         FontMetrics fm1 = g2.getFontMetrics();
-        g2.drawString(centerPct, cx - fm1.stringWidth(centerPct) / 2, cy - 2);
+        g2.drawString(centerPct, cx - fm1.stringWidth(centerPct) / 2, cy);
 
         g2.setFont(AppFonts.CAPTION);
         g2.setColor(AppColors.TEXT_MUTED);
-        String centerSub = "ATTENDED";
         FontMetrics fm2 = g2.getFontMetrics();
-        g2.drawString(centerSub, cx - fm2.stringWidth(centerSub) / 2, cy + 14);
+        g2.drawString(centerSubtitle, cx - fm2.stringWidth(centerSubtitle) / 2, cy + 16);
 
         // 3. Legend on the Right
-        int lx = w - 125;
+        int lx = w - 140;
         int ly = cy - 35;
 
         // Present Legend
-        g2.setColor(AppColors.SUCCESS);
+        g2.setColor(presentColor);
         g2.fillRoundRect(lx, ly, 12, 12, 4, 4);
         g2.setFont(AppFonts.BADGE);
         g2.setColor(AppColors.TEXT_PRIMARY);
-        g2.drawString("Present", lx + 18, ly + 11);
+        g2.drawString("PRESENT", lx + 18, ly + 11);
         g2.setFont(AppFonts.CAPTION);
         g2.setColor(AppColors.TEXT_MUTED);
         g2.drawString(distribution.getPresentCount() + " (" + String.format("%.1f%%", presentPct) + ")", lx + 18, ly + 25);
 
         // Absent Legend
         int ly2 = ly + 40;
-        g2.setColor(AppColors.DANGER);
+        g2.setColor(absentColor);
         g2.fillRoundRect(lx, ly2, 12, 12, 4, 4);
         g2.setFont(AppFonts.BADGE);
         g2.setColor(AppColors.TEXT_PRIMARY);
-        g2.drawString("Absent", lx + 18, ly2 + 11);
+        g2.drawString("ABSENT", lx + 18, ly2 + 11);
         g2.setFont(AppFonts.CAPTION);
         g2.setColor(AppColors.TEXT_MUTED);
         g2.drawString(distribution.getAbsentCount() + " (" + String.format("%.1f%%", absentPct) + ")", lx + 18, ly2 + 25);

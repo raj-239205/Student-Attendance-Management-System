@@ -1,14 +1,17 @@
 package com.college.attendance.ui.views;
 
 import com.college.attendance.config.AppConstants;
+import com.college.attendance.model.AttendanceDistribution;
+import com.college.attendance.model.User;
 import com.college.attendance.service.DashboardService;
+import com.college.attendance.service.ReportService;
 import com.college.attendance.ui.components.RoundedPanel;
 import com.college.attendance.ui.components.StatCard;
+import com.college.attendance.ui.components.charts.DonutChartPanel;
 import com.college.attendance.ui.navigation.NavigationItem;
 import com.college.attendance.ui.theme.AppColors;
 import com.college.attendance.ui.theme.AppFonts;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -18,29 +21,40 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.function.Consumer;
 
 /**
- * Modern Administrator dashboard with real database metrics, quick actions,
- * and system health overview.
+ * Modern Administrator dashboard with real database metrics, Attendance Overview donut chart,
+ * quick navigation actions, and system health overview.
  */
 public class AdminDashboardView extends JPanel {
 
     private final DashboardService dashboardService;
+    private final ReportService reportService;
     private final Consumer<NavigationItem> navigationHandler;
 
     private StatCard studentsCard;
     private StatCard subjectsCard;
     private StatCard attendanceCard;
     private StatCard defaultersCard;
+    private DonutChartPanel attendanceDonutChart;
 
     public AdminDashboardView(DashboardService dashboardService, Consumer<NavigationItem> navigationHandler) {
+        this(dashboardService,
+             (dashboardService != null && dashboardService.getDbConnection() != null)
+                     ? new ReportService(dashboardService.getDbConnection())
+                     : null,
+             navigationHandler);
+    }
+
+    public AdminDashboardView(DashboardService dashboardService, ReportService reportService, Consumer<NavigationItem> navigationHandler) {
         this.dashboardService = dashboardService;
+        this.reportService = (reportService != null) ? reportService :
+                ((dashboardService != null && dashboardService.getDbConnection() != null)
+                        ? new ReportService(dashboardService.getDbConnection()) : null);
         this.navigationHandler = navigationHandler;
 
         setLayout(new BorderLayout());
@@ -49,18 +63,23 @@ public class AdminDashboardView extends JPanel {
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(AppColors.BG_APP);
-        content.setBorder(new EmptyBorder(28, 32, 28, 32));
+        content.setBorder(new EmptyBorder(22, 28, 22, 28));
 
-        // Welcome banner
+        // 1. Welcome banner
         content.add(createHeaderSection());
-        content.add(Box.createVerticalStrut(24));
+        content.add(Box.createVerticalStrut(14));
 
-        // 4 Key Stat Cards
+        // 2. 4 Key Stat Cards
         content.add(createStatCardsSection());
-        content.add(Box.createVerticalStrut(28));
+        content.add(Box.createVerticalStrut(16));
 
-        // Bottom section: Quick Actions & System Info
-        content.add(createLowerSection());
+        // 3. Middle Section: Attendance Overview (Donut Chart) + Quick Navigation
+        content.add(createMiddleSection());
+        content.add(Box.createVerticalStrut(16));
+
+        // 4. Lower Section: System Policies & Health
+        content.add(createSystemPoliciesSection());
+        content.add(Box.createVerticalGlue());
 
         JScrollPane scrollPane = new JScrollPane(content);
         scrollPane.setBorder(null);
@@ -76,6 +95,7 @@ public class AdminDashboardView extends JPanel {
     private JPanel createHeaderSection() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
 
         JPanel textPanel = new JPanel();
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
@@ -90,7 +110,7 @@ public class AdminDashboardView extends JPanel {
         subLabel.setForeground(AppColors.TEXT_MUTED);
 
         textPanel.add(welcomeLabel);
-        textPanel.add(Box.createVerticalStrut(4));
+        textPanel.add(Box.createVerticalStrut(3));
         textPanel.add(subLabel);
 
         panel.add(textPanel, BorderLayout.WEST);
@@ -100,7 +120,8 @@ public class AdminDashboardView extends JPanel {
     private JPanel createStatCardsSection() {
         JPanel grid = new JPanel(new GridLayout(1, 4, 16, 0));
         grid.setOpaque(false);
-        grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+        grid.setPreferredSize(new Dimension(1000, 110));
 
         studentsCard = new StatCard("Students", "...", "Active enrollments", AppColors.PRIMARY);
         subjectsCard = new StatCard("Subjects", "...", "Curriculum courses", AppColors.ROLE_ADMIN);
@@ -115,23 +136,33 @@ public class AdminDashboardView extends JPanel {
         return grid;
     }
 
-    private JPanel createLowerSection() {
-        JPanel lower = new JPanel(new GridLayout(1, 2, 20, 0));
-        lower.setOpaque(false);
-        lower.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
+    private JPanel createMiddleSection() {
+        JPanel middle = new JPanel(new GridLayout(1, 2, 16, 0));
+        middle.setOpaque(false);
+        middle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
+        middle.setPreferredSize(new Dimension(1000, 280));
 
-        // Quick Actions Card
+        // Left: Attendance Overview Donut Chart (Blue for Present, Gold for Absent)
+        attendanceDonutChart = new DonutChartPanel(
+                AttendanceDistribution.empty(),
+                AppColors.PRIMARY,
+                AppColors.ACCENT_GOLD,
+                "PRESENT"
+        );
+        attendanceDonutChart.setTitle("ATTENDANCE OVERVIEW");
+
+        // Right: Quick Navigation Card
         RoundedPanel actionsCard = new RoundedPanel(16, AppColors.BG_CARD, AppColors.BORDER_CARD);
         actionsCard.setLayout(new BoxLayout(actionsCard, BoxLayout.Y_AXIS));
-        actionsCard.setBorder(new EmptyBorder(20, 24, 20, 24));
+        actionsCard.setBorder(new EmptyBorder(16, 20, 16, 20));
 
         JLabel actionsTitle = new JLabel("QUICK NAVIGATION");
         actionsTitle.setFont(AppFonts.BADGE);
         actionsTitle.setForeground(AppColors.TEXT_MUTED);
         actionsCard.add(actionsTitle);
-        actionsCard.add(Box.createVerticalStrut(14));
+        actionsCard.add(Box.createVerticalStrut(12));
 
-        JPanel buttonsPanel = new JPanel(new GridLayout(3, 2, 12, 10));
+        JPanel buttonsPanel = new JPanel(new GridLayout(3, 2, 10, 10));
         buttonsPanel.setOpaque(false);
 
         buttonsPanel.add(createActionButton("👥 Students Directory", () -> navigationHandler.accept(NavigationItem.STUDENTS)));
@@ -143,29 +174,35 @@ public class AdminDashboardView extends JPanel {
 
         actionsCard.add(buttonsPanel);
 
-        // System Configuration Card
+        middle.add(attendanceDonutChart);
+        middle.add(actionsCard);
+
+        return middle;
+    }
+
+    private JPanel createSystemPoliciesSection() {
         RoundedPanel configCard = new RoundedPanel(16, AppColors.BG_CARD, AppColors.BORDER_CARD);
         configCard.setLayout(new BoxLayout(configCard, BoxLayout.Y_AXIS));
-        configCard.setBorder(new EmptyBorder(20, 24, 20, 24));
+        configCard.setBorder(new EmptyBorder(16, 20, 16, 20));
+        configCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
+        configCard.setPreferredSize(new Dimension(1000, 125));
 
         JLabel configTitle = new JLabel("SYSTEM POLICIES & HEALTH");
         configTitle.setFont(AppFonts.BADGE);
         configTitle.setForeground(AppColors.TEXT_MUTED);
         configCard.add(configTitle);
-        configCard.add(Box.createVerticalStrut(14));
+        configCard.add(Box.createVerticalStrut(12));
 
-        configCard.add(createConfigRow("Defaulter Cutoff Threshold", AppConstants.DEFAULT_DEFAULTER_THRESHOLD + "% Required", AppColors.WARNING_LIGHT));
-        configCard.add(Box.createVerticalStrut(10));
-        configCard.add(createConfigRow("Database Storage Engine", "MySQL 8.4 InnoDB", AppColors.TEXT_SECONDARY));
-        configCard.add(Box.createVerticalStrut(10));
-        configCard.add(createConfigRow("Authentication Hashing", "BCrypt 60-char Rounds", AppColors.SUCCESS_LIGHT));
-        configCard.add(Box.createVerticalStrut(10));
-        configCard.add(createConfigRow("Student Data Linkage", "Foreign Key 1:1 Enforced", AppColors.INFO));
+        JPanel grid = new JPanel(new GridLayout(2, 2, 28, 10));
+        grid.setOpaque(false);
 
-        lower.add(actionsCard);
-        lower.add(configCard);
+        grid.add(createConfigRow("Defaulter Cutoff Threshold", AppConstants.DEFAULT_DEFAULTER_THRESHOLD + "% Required", AppColors.WARNING_LIGHT));
+        grid.add(createConfigRow("Database Storage Engine", "MySQL 8.4 InnoDB", AppColors.TEXT_SECONDARY));
+        grid.add(createConfigRow("Authentication Hashing", "BCrypt 60-char Rounds", AppColors.SUCCESS_LIGHT));
+        grid.add(createConfigRow("Student Data Linkage", "Foreign Key 1:1 Enforced", AppColors.INFO));
 
-        return lower;
+        configCard.add(grid);
+        return configCard;
     }
 
     private JButton createActionButton(String label, Runnable action) {
@@ -222,28 +259,45 @@ public class AdminDashboardView extends JPanel {
     }
 
     private void loadMetricsAsync() {
-        SwingWorker<DashboardService.AdminDashboardMetrics, Void> worker = new SwingWorker<>() {
+        SwingWorker<DashboardDataResult, Void> worker = new SwingWorker<>() {
             @Override
-            protected DashboardService.AdminDashboardMetrics doInBackground() {
-                return dashboardService.getAdminMetrics();
+            protected DashboardDataResult doInBackground() {
+                DashboardService.AdminDashboardMetrics m = dashboardService.getAdminMetrics();
+                AttendanceDistribution dist = null;
+                if (reportService != null) {
+                    dist = reportService.getAttendanceDistribution(null, null, null, User.Role.ADMIN);
+                }
+                return new DashboardDataResult(m, dist);
             }
 
             @Override
             protected void done() {
                 try {
-                    DashboardService.AdminDashboardMetrics m = get();
+                    DashboardDataResult result = get();
+                    DashboardService.AdminDashboardMetrics m = result.metrics();
                     studentsCard.setValue(String.valueOf(m.totalStudents()));
                     subjectsCard.setValue(String.valueOf(m.totalSubjects()));
                     attendanceCard.setValue(String.valueOf(m.totalAttendanceRecords()));
                     defaultersCard.setValue(String.valueOf(m.defaultersCount()));
+
+                    if (attendanceDonutChart != null) {
+                        attendanceDonutChart.setDistribution(
+                                (result.distribution() != null) ? result.distribution() : AttendanceDistribution.empty()
+                        );
+                    }
                 } catch (Exception e) {
                     studentsCard.setValue("0");
                     subjectsCard.setValue("0");
                     attendanceCard.setValue("0");
                     defaultersCard.setValue("0");
+                    if (attendanceDonutChart != null) {
+                        attendanceDonutChart.setDistribution(AttendanceDistribution.empty());
+                    }
                 }
             }
         };
         worker.execute();
     }
+
+    private record DashboardDataResult(DashboardService.AdminDashboardMetrics metrics, AttendanceDistribution distribution) {}
 }

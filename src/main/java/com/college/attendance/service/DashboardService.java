@@ -29,6 +29,10 @@ public class DashboardService {
         this.dashboardDAO = dashboardDAO;
     }
 
+    public DatabaseConnection getDbConnection() {
+        return dbConnection;
+    }
+
     /**
      * Metric container for the Administrator dashboard.
      */

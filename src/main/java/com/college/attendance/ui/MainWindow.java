@@ -269,7 +269,7 @@ public class MainWindow extends JFrame {
         // Add Role Dashboard as primary card
         JPanel dashboardView;
         if (session.getRole() == User.Role.ADMIN) {
-            dashboardView = new AdminDashboardView(dashboardService, this::navigateTo);
+            dashboardView = new AdminDashboardView(dashboardService, reportService, this::navigateTo);
         } else if (session.getRole() == User.Role.FACULTY) {
             dashboardView = new FacultyDashboardView(dashboardService, this::navigateTo);
         } else {
