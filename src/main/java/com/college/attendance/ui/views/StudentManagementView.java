@@ -146,14 +146,20 @@ public class StudentManagementView extends JPanel {
                 protected void paintComponent(Graphics g) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(AppColors.PRIMARY);
+                    if (getModel().isPressed()) {
+                        g2.setColor(AppColors.ACCENT_GOLD_PRESS);
+                    } else if (getModel().isRollover()) {
+                        g2.setColor(AppColors.ACCENT_GOLD_HOVER);
+                    } else {
+                        g2.setColor(AppColors.ACCENT_GOLD);
+                    }
                     g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
                     g2.dispose();
                     super.paintComponent(g);
                 }
             };
             addStudentBtn.setFont(AppFonts.BUTTON);
-            addStudentBtn.setForeground(java.awt.Color.WHITE);
+            addStudentBtn.setForeground(AppColors.TEXT_DARK_BTN);
             addStudentBtn.setFocusPainted(false);
             addStudentBtn.setContentAreaFilled(false);
             addStudentBtn.setBorder(new EmptyBorder(8, 16, 8, 16));
@@ -291,15 +297,42 @@ public class StudentManagementView extends JPanel {
     }
 
     private JButton createOutlineButton(String label, Runnable action) {
-        JButton btn = new JButton(label);
+        JButton btn = new JButton(label) {
+            private boolean hover = false;
+            {
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) {
+                        hover = true;
+                        repaint();
+                    }
+                    public void mouseExited(java.awt.event.MouseEvent e) {
+                        hover = false;
+                        repaint();
+                    }
+                });
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(hover ? AppColors.BG_CARD_HOVER : AppColors.BG_INPUT);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                g2.setColor(hover ? AppColors.PRIMARY : AppColors.BORDER_CARD);
+                g2.setStroke(new java.awt.BasicStroke(1.0f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 8, 8));
+                java.awt.FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setColor(hover ? java.awt.Color.WHITE : AppColors.TEXT_MUTED);
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
         btn.setFont(AppFonts.BUTTON);
-        btn.setForeground(AppColors.TEXT_PRIMARY);
-        btn.setBackground(AppColors.BG_CARD);
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColors.BORDER_CARD, 1),
-                new EmptyBorder(8, 14, 8, 14)
-        ));
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
         return btn;

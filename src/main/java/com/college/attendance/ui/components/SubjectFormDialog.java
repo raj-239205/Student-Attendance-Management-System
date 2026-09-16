@@ -138,15 +138,31 @@ public class SubjectFormDialog extends JDialog {
         JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         buttonBar.setOpaque(false);
 
-        JButton cancelButton = new JButton("Cancel");
+        JButton cancelButton = new JButton("Cancel") {
+            private boolean hover = false;
+            {
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) { hover = true; repaint(); }
+                    public void mouseExited(java.awt.event.MouseEvent e) { hover = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(hover ? AppColors.BG_CARD_HOVER : AppColors.BG_INPUT);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.setColor(hover ? AppColors.PRIMARY : AppColors.BORDER_CARD);
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         cancelButton.setFont(AppFonts.BUTTON);
-        cancelButton.setForeground(AppColors.TEXT_SECONDARY);
-        cancelButton.setBackground(AppColors.BG_CARD);
+        cancelButton.setForeground(AppColors.TEXT_MUTED);
         cancelButton.setFocusPainted(false);
-        cancelButton.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColors.BORDER_CARD, 1),
-                new EmptyBorder(8, 18, 8, 18)
-        ));
+        cancelButton.setContentAreaFilled(false);
+        cancelButton.setBorder(new EmptyBorder(8, 18, 8, 18));
         cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         cancelButton.addActionListener(e -> dispose());
 
@@ -155,14 +171,22 @@ public class SubjectFormDialog extends JDialog {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(isEnabled() ? AppColors.PRIMARY : AppColors.BORDER_INPUT);
+                if (!isEnabled()) {
+                    g2.setColor(AppColors.BORDER_INPUT);
+                } else if (getModel().isPressed()) {
+                    g2.setColor(AppColors.ACCENT_GOLD_PRESS);
+                } else if (getModel().isRollover()) {
+                    g2.setColor(AppColors.ACCENT_GOLD_HOVER);
+                } else {
+                    g2.setColor(AppColors.ACCENT_GOLD);
+                }
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
         submitButton.setFont(AppFonts.BUTTON);
-        submitButton.setForeground(java.awt.Color.WHITE);
+        submitButton.setForeground(AppColors.TEXT_DARK_BTN);
         submitButton.setFocusPainted(false);
         submitButton.setContentAreaFilled(false);
         submitButton.setBorder(new EmptyBorder(8, 20, 8, 20));

@@ -6,6 +6,7 @@ import com.college.attendance.ui.theme.AppFonts;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -17,7 +18,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 
 /**
- * Modern sidebar navigation button with active, hover, and focus states.
+ * Modern portfolio-styled sidebar navigation button with active, hover, and focus states.
  */
 public class SidebarNavButton extends JButton {
 
@@ -45,12 +46,18 @@ public class SidebarNavButton extends JButton {
             @Override
             public void mouseEntered(MouseEvent e) {
                 hover = true;
+                if (!active) {
+                    setForeground(Color.WHITE);
+                }
                 repaint();
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 hover = false;
+                if (!active) {
+                    setForeground(AppColors.SIDEBAR_BTN_TEXT);
+                }
                 repaint();
             }
         });
@@ -79,17 +86,27 @@ public class SidebarNavButton extends JButton {
         int height = getHeight();
 
         if (active) {
-            // Active background
+            // Active background (#1b2a42)
             g2.setColor(AppColors.SIDEBAR_BTN_ACTIVE_BG);
             g2.fill(new RoundRectangle2D.Float(4, 2, width - 8, height - 4, 10, 10));
 
-            // Left indicator bar
+            // Subtle electric blue border
+            g2.setColor(new Color(59, 130, 246, 110));
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.draw(new RoundRectangle2D.Float(4.5f, 2.5f, width - 9, height - 5, 10, 10));
+
+            // Left electric blue accent pill
             g2.setColor(AppColors.PRIMARY);
             g2.fill(new RoundRectangle2D.Float(4, 8, 4, height - 16, 4, 4));
         } else if (hover) {
-            // Hover background
+            // Hover background (#17253d)
             g2.setColor(AppColors.SIDEBAR_BTN_HOVER_BG);
             g2.fill(new RoundRectangle2D.Float(4, 2, width - 8, height - 4, 10, 10));
+
+            // Subtle border
+            g2.setColor(new Color(39, 59, 92));
+            g2.setStroke(new BasicStroke(1.0f));
+            g2.draw(new RoundRectangle2D.Float(4.5f, 2.5f, width - 9, height - 5, 10, 10));
         }
 
         g2.dispose();

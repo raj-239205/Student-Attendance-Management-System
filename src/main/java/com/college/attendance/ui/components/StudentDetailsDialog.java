@@ -98,15 +98,31 @@ public class StudentDetailsDialog extends JDialog {
         JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         buttonBar.setOpaque(false);
 
-        JButton closeButton = new JButton("Close");
+        JButton closeButton = new JButton("Close") {
+            private boolean hover = false;
+            {
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) { hover = true; repaint(); }
+                    public void mouseExited(java.awt.event.MouseEvent e) { hover = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(hover ? AppColors.BG_CARD_HOVER : AppColors.BG_INPUT);
+                g2.fill(new java.awt.geom.RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.setColor(hover ? AppColors.PRIMARY : AppColors.BORDER_CARD);
+                g2.draw(new java.awt.geom.RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         closeButton.setFont(AppFonts.BUTTON);
         closeButton.setForeground(AppColors.TEXT_PRIMARY);
-        closeButton.setBackground(AppColors.BG_CARD);
         closeButton.setFocusPainted(false);
-        closeButton.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColors.BORDER_CARD, 1),
-                new EmptyBorder(8, 22, 8, 22)
-        ));
+        closeButton.setContentAreaFilled(false);
+        closeButton.setBorder(new EmptyBorder(8, 22, 8, 22));
         closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         closeButton.addActionListener(e -> dispose());
 

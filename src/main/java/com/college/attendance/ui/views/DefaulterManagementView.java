@@ -179,7 +179,7 @@ public class DefaulterManagementView extends JPanel {
                 new EmptyBorder(4, 10, 4, 10)
         ));
 
-        filterBtn = createOutlineButton("Apply", this::refreshDataAsync);
+        filterBtn = createGoldButton("Apply", this::refreshDataAsync);
         resetBtn = createOutlineButton("Reset", () -> {
             subjectComboBox.setSelectedIndex(0);
             statusComboBox.setSelectedIndex(0);
@@ -446,6 +446,39 @@ public class DefaulterManagementView extends JPanel {
     private record DataBundle(List<DefaulterRecord> records, DefaulterSummary summary) {
     }
 
+    private JButton createGoldButton(String text, Runnable onClick) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(AppColors.ACCENT_GOLD_PRESS);
+                } else if (getModel().isRollover()) {
+                    g2.setColor(AppColors.ACCENT_GOLD_HOVER);
+                } else {
+                    g2.setColor(AppColors.ACCENT_GOLD);
+                }
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                java.awt.FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setColor(AppColors.TEXT_DARK_BTN);
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
+        btn.setFont(AppFonts.BUTTON);
+        btn.setForeground(AppColors.TEXT_DARK_BTN);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setBorder(new EmptyBorder(8, 16, 8, 16));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> onClick.run());
+        return btn;
+    }
+
     private JButton createOutlineButton(String text, Runnable onClick) {
         JButton btn = new JButton(text) {
             private boolean hover = false;
@@ -471,27 +504,27 @@ public class DefaulterManagementView extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                g2.setColor(hover ? AppColors.SIDEBAR_BTN_HOVER_BG : AppColors.BG_CARD);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.setColor(hover ? AppColors.BG_CARD_HOVER : AppColors.BG_INPUT);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
 
                 g2.setColor(hover ? AppColors.PRIMARY : AppColors.BORDER_CARD);
-                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 10, 10));
+                g2.setStroke(new java.awt.BasicStroke(1.0f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 8, 8));
 
                 java.awt.FontMetrics fm = g2.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
                 int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
 
-                g2.setColor(AppColors.TEXT_PRIMARY);
+                g2.setColor(hover ? java.awt.Color.WHITE : AppColors.TEXT_MUTED);
                 g2.drawString(getText(), x, y);
                 g2.dispose();
             }
         };
-
         btn.setFont(AppFonts.BUTTON);
-        btn.setPreferredSize(new Dimension(80, 36));
         btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setBorder(new EmptyBorder(8, 14, 8, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> onClick.run());
         return btn;

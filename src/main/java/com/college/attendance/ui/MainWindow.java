@@ -132,13 +132,13 @@ public class MainWindow extends JFrame {
         JPanel brandPanel = new JPanel();
         brandPanel.setLayout(new BoxLayout(brandPanel, BoxLayout.Y_AXIS));
         brandPanel.setOpaque(false);
-        brandPanel.setBorder(new EmptyBorder(24, 20, 20, 20));
+        brandPanel.setBorder(new EmptyBorder(24, 20, 18, 20));
 
-        JLabel brandBadge = new JLabel("COLLEGE ATTENDANCE");
+        JLabel brandBadge = new JLabel("ATTENDANCE SYSTEM");
         brandBadge.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 10));
-        brandBadge.setForeground(AppColors.PRIMARY);
+        brandBadge.setForeground(AppColors.ACCENT_GOLD);
 
-        JLabel brandTitle = new JLabel("Management");
+        JLabel brandTitle = new JLabel("COLLEGE SYSTEM");
         brandTitle.setFont(AppFonts.SECTION_HEADER);
         brandTitle.setForeground(AppColors.TEXT_PRIMARY);
 
@@ -147,8 +147,8 @@ public class MainWindow extends JFrame {
         brandPanel.add(brandTitle);
 
         JSeparator sep = new JSeparator();
-        sep.setForeground(AppColors.BORDER_SUBTLE);
-        sep.setBackground(AppColors.BORDER_SUBTLE);
+        sep.setForeground(AppColors.BORDER_CARD);
+        sep.setBackground(AppColors.BORDER_CARD);
         sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
         brandPanel.add(Box.createVerticalStrut(14));
         brandPanel.add(sep);
@@ -352,7 +352,7 @@ public class MainWindow extends JFrame {
         public ModernLogoutButton(String text) {
             super(text);
             setFont(AppFonts.BUTTON);
-            setForeground(Color.WHITE);
+            setForeground(AppColors.TEXT_MUTED);
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);
@@ -362,12 +362,14 @@ public class MainWindow extends JFrame {
                 @Override
                 public void mouseEntered(MouseEvent e) {
                     hover = true;
+                    setForeground(Color.WHITE);
                     repaint();
                 }
 
                 @Override
                 public void mouseExited(MouseEvent e) {
                     hover = false;
+                    setForeground(AppColors.TEXT_MUTED);
                     repaint();
                 }
             });
@@ -378,14 +380,28 @@ public class MainWindow extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            g2.setColor(hover ? AppColors.DANGER_HOVER : AppColors.DANGER);
-            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+            int w = getWidth();
+            int h = getHeight();
+
+            if (hover) {
+                g2.setColor(AppColors.DANGER_BG);
+                g2.fill(new RoundRectangle2D.Float(0, 0, w, h, 10, 10));
+                g2.setColor(AppColors.DANGER);
+                g2.setStroke(new java.awt.BasicStroke(1.0f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, w - 1, h - 1, 10, 10));
+            } else {
+                g2.setColor(new Color(23, 37, 61));
+                g2.fill(new RoundRectangle2D.Float(0, 0, w, h, 10, 10));
+                g2.setColor(AppColors.BORDER_CARD);
+                g2.setStroke(new java.awt.BasicStroke(1.0f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, w - 1, h - 1, 10, 10));
+            }
 
             java.awt.FontMetrics fm = g2.getFontMetrics();
-            int x = (getWidth() - fm.stringWidth(getText())) / 2;
-            int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+            int x = (w - fm.stringWidth(getText())) / 2;
+            int y = (h + fm.getAscent() - fm.getDescent()) / 2;
 
-            g2.setColor(Color.WHITE);
+            g2.setColor(hover ? Color.WHITE : AppColors.TEXT_MUTED);
             g2.drawString(getText(), x, y);
             g2.dispose();
         }

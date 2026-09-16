@@ -46,6 +46,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -204,7 +205,7 @@ public class ReportsAnalyticsView extends JPanel {
         searchLbl.setForeground(AppColors.TEXT_PRIMARY);
         searchField = createInputField("Roll, name, code...", 130);
 
-        applyFilterBtn = createButton("Apply", AppColors.PRIMARY, this::refreshReportsAsync);
+        applyFilterBtn = createGoldButton("Apply", this::refreshReportsAsync);
         resetFilterBtn = createOutlineButton("Reset", () -> {
             subjectComboBox.setSelectedIndex(0);
             statusComboBox.setSelectedIndex(0);
@@ -647,13 +648,53 @@ public class ReportsAnalyticsView extends JPanel {
         return field;
     }
 
-    private JButton createButton(String text, Color bg, Runnable onClick) {
+    private JButton createGoldButton(String text, Runnable onClick) {
         JButton btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(bg);
+                if (getModel().isPressed()) {
+                    g2.setColor(AppColors.ACCENT_GOLD_PRESS);
+                } else if (getModel().isRollover()) {
+                    g2.setColor(AppColors.ACCENT_GOLD_HOVER);
+                } else {
+                    g2.setColor(AppColors.ACCENT_GOLD);
+                }
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+
+                FontMetrics fm = g2.getFontMetrics(AppFonts.BUTTON);
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setFont(AppFonts.BUTTON);
+                g2.setColor(AppColors.TEXT_DARK_BTN);
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
+        btn.setPreferredSize(new Dimension(95, 36));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> onClick.run());
+        return btn;
+    }
+
+    private JButton createButton(String text, Color bg, Runnable onClick) {
+        JButton btn = new JButton(text) {
+            private boolean hover = false;
+            {
+                addMouseListener(new MouseAdapter() {
+                    public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
+                    public void mouseExited(MouseEvent e) { hover = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(hover ? bg.brighter() : bg);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
 
                 FontMetrics fm = g2.getFontMetrics(AppFonts.BUTTON);
@@ -665,7 +706,7 @@ public class ReportsAnalyticsView extends JPanel {
                 g2.dispose();
             }
         };
-        btn.setPreferredSize(new Dimension(95, 36));
+        btn.setPreferredSize(new Dimension(105, 36));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
@@ -687,7 +728,7 @@ public class ReportsAnalyticsView extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hover ? AppColors.SIDEBAR_BTN_HOVER_BG : AppColors.BG_CARD);
+                g2.setColor(hover ? AppColors.BG_CARD_HOVER : AppColors.BG_INPUT);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
                 g2.setColor(hover ? AppColors.PRIMARY : AppColors.BORDER_CARD);
                 g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 10, 10));
@@ -696,12 +737,12 @@ public class ReportsAnalyticsView extends JPanel {
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
                 int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
                 g2.setFont(AppFonts.BUTTON);
-                g2.setColor(AppColors.TEXT_PRIMARY);
+                g2.setColor(hover ? Color.WHITE : AppColors.TEXT_PRIMARY);
                 g2.drawString(getText(), x, y);
                 g2.dispose();
             }
         };
-        btn.setPreferredSize(new Dimension(75, 36));
+        btn.setPreferredSize(new Dimension(80, 36));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
@@ -712,19 +753,44 @@ public class ReportsAnalyticsView extends JPanel {
 
     private JButton createTabButton(String text, boolean initialActive, Runnable onClick) {
         JButton btn = new JButton(text) {
+            private boolean hover = false;
+            {
+                addMouseListener(new MouseAdapter() {
+                    public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
+                    public void mouseExited(MouseEvent e) { hover = false; repaint(); }
+                });
+            }
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 boolean isActive = text.toUpperCase().contains(activeTab);
-                g2.setColor(isActive ? AppColors.PRIMARY : AppColors.BG_CARD);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                if (isActive) {
+                    g2.setColor(AppColors.BG_CARD);
+                    g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                    g2.setColor(AppColors.PRIMARY);
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.draw(new RoundRectangle2D.Float(1f, 1f, getWidth() - 2, getHeight() - 2, 8, 8));
+                    // Active indicator gold line
+                    g2.setColor(AppColors.ACCENT_GOLD);
+                    g2.fill(new RoundRectangle2D.Float(12, getHeight() - 3, getWidth() - 24, 3, 2, 2));
+                } else if (hover) {
+                    g2.setColor(AppColors.BG_CARD_HOVER);
+                    g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                    g2.setColor(AppColors.BORDER_CARD);
+                    g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 8, 8));
+                } else {
+                    g2.setColor(AppColors.BG_APP);
+                    g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                    g2.setColor(AppColors.BORDER_CARD);
+                    g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 8, 8));
+                }
 
                 FontMetrics fm = g2.getFontMetrics(AppFonts.BUTTON);
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
                 int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
                 g2.setFont(AppFonts.BUTTON);
-                g2.setColor(isActive ? Color.WHITE : AppColors.TEXT_MUTED);
+                g2.setColor(isActive ? Color.WHITE : (hover ? AppColors.TEXT_PRIMARY : AppColors.TEXT_MUTED));
                 g2.drawString(getText(), x, y);
                 g2.dispose();
             }

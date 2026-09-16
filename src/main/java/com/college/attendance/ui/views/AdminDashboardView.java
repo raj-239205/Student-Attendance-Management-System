@@ -169,15 +169,36 @@ public class AdminDashboardView extends JPanel {
     }
 
     private JButton createActionButton(String label, Runnable action) {
-        JButton btn = new JButton(label);
+        JButton btn = new JButton(label) {
+            private boolean hover = false;
+            {
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) { hover = true; repaint(); }
+                    public void mouseExited(java.awt.event.MouseEvent e) { hover = false; repaint(); }
+                });
+            }
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(hover ? AppColors.BG_CARD_HOVER : AppColors.BG_INPUT);
+                g2.fill(new java.awt.geom.RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.setColor(hover ? AppColors.PRIMARY : AppColors.BORDER_CARD);
+                g2.draw(new java.awt.geom.RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 10, 10));
+
+                java.awt.FontMetrics fm = g2.getFontMetrics(AppFonts.BUTTON);
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.setFont(AppFonts.BUTTON);
+                g2.setColor(hover ? java.awt.Color.WHITE : AppColors.TEXT_PRIMARY);
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
         btn.setFont(AppFonts.BUTTON);
-        btn.setForeground(AppColors.TEXT_PRIMARY);
-        btn.setBackground(AppColors.BG_APP);
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(AppColors.BORDER_CARD, 1),
-                new EmptyBorder(10, 14, 10, 14)
-        ));
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
         return btn;
