@@ -100,6 +100,10 @@ public class StatCard extends RoundedPanel {
         repaint();
     }
 
+    public void setDescription(String description) {
+        setCaption(description);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

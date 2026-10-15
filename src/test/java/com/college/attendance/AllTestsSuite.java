@@ -56,8 +56,16 @@ public class AllTestsSuite {
             Stage10SystemPolishTest.main(args);
 
             // 9. Realistic Demonstration Dataset Verification
-            System.out.println("\n>>> [9/9] Running Demo Dataset Verification Suite...");
+            System.out.println("\n>>> [9/10] Running Demo Dataset Verification Suite...");
             DemoDatasetVerificationTest.main(args);
+
+            // 10. Dashboard Attendance Metric Correction Verification
+            System.out.println("\n>>> [10/11] Running Dashboard Attendance Metric Correction Suite...");
+            DashboardMetricsCorrectionTest.main(args);
+
+            // 11. Faculty Dashboard & RBAC Scoping Verification
+            System.out.println("\n>>> [11/11] Running Faculty Dashboard & RBAC Scoping Suite...");
+            FacultyDashboardRBACTest.main(args);
 
             long elapsed = System.currentTimeMillis() - startTime;
             System.out.println("\n================================================================================");

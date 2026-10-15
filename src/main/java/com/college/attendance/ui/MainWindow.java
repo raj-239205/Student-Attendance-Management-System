@@ -271,7 +271,7 @@ public class MainWindow extends JFrame {
         if (session.getRole() == User.Role.ADMIN) {
             dashboardView = new AdminDashboardView(dashboardService, reportService, this::navigateTo);
         } else if (session.getRole() == User.Role.FACULTY) {
-            dashboardView = new FacultyDashboardView(dashboardService, this::navigateTo);
+            dashboardView = new FacultyDashboardView(dashboardService, session, this::navigateTo);
         } else {
             dashboardView = new StudentDashboardView(dashboardService, session);
         }
